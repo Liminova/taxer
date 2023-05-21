@@ -23,6 +23,6 @@ pub async fn run(
 }
 pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicationCommand {
     command
-        .name("draken")
+        .name("briten")
         .description("A command that measures the briten-ness of the day.")
 }
