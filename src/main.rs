@@ -1,7 +1,7 @@
 use dotenvy::dotenv;
 use serenity::{
     async_trait,
-    model::prelude::{command::Command, interaction::Interaction, Ready},
+    model::prelude::{command::Command, interaction::Interaction, interaction::InteractionResponseType, Ready},
     prelude::*,
 };
 use std::env;
@@ -15,11 +15,13 @@ impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(command) = interaction {
             println!("Received command interaction: {:#?}", command);
-
-            if let Err(why) = match command.data.name.as_str() {
+            
+            if let Err(why) = match command.data.name.as_str(){
                 "ping" => commands::ping::run(&command, &ctx).await,
+                "satisfaction" => commands::satisfaction::run(&command, &ctx).await,
                 _ => Ok(()),
-            } {
+            }
+            {
                 println!("cannot respond to slash command: {:#?}", why);
             };
         }
@@ -28,8 +30,11 @@ impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
 
+
         let commands = Command::set_global_application_commands(&ctx.http, |commands| {
-            commands.create_application_command(|command| commands::ping::register(command))
+            commands
+                .create_application_command(|command| commands::ping::register(command))
+                .create_application_command(|command| commands::satisfaction::register(command))
         })
         .await;
 

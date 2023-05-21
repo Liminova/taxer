@@ -833,6 +833,7 @@ name = "taxer"
 version = "0.1.0"
 dependencies = [
  "dotenvy",
+ "rand",
  "serenity",
  "tokio",
 ]
