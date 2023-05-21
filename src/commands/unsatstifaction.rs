@@ -17,12 +17,12 @@ pub async fn run(
             response
                 .kind(InteractionResponseType::ChannelMessageWithSource)
                 .interaction_response_data(|message| {
-                    message.content(format!("Your satisfaction level is: **{}/10**", out_of_ten()))
+                    message.content(format!("Your unsatisfaction level is: **{}/10**", out_of_ten()))
                 })
         }).await
 }
 pub fn register(command: &mut CreateApplicationCommand) -> &mut CreateApplicationCommand {
     command
-        .name("satisfaction")
-        .description("A command that measures your current satisfaction level.")
+        .name("unsatisfaction")
+        .description("A command that measures your current unsatisfaction level.")
 }

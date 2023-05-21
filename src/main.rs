@@ -1,7 +1,7 @@
 use dotenvy::dotenv;
 use serenity::{
     async_trait,
-    model::prelude::{command::Command, interaction::Interaction, interaction::InteractionResponseType, Ready},
+    model::prelude::{command::Command, interaction::Interaction, Ready},
     prelude::*,
 };
 use std::env;
@@ -19,6 +19,9 @@ impl EventHandler for Handler {
             if let Err(why) = match command.data.name.as_str(){
                 "ping" => commands::ping::run(&command, &ctx).await,
                 "satisfaction" => commands::satisfaction::run(&command, &ctx).await,
+                "unsatisfaction" => commands::unsatisfaction::run(&command, &ctx).await,
+                "draken" => commands::draken::run(&command, &ctx).await,
+                "briten" => commands::briten::run(&command, &ctx).await,
                 _ => Ok(()),
             }
             {
@@ -35,6 +38,9 @@ impl EventHandler for Handler {
             commands
                 .create_application_command(|command| commands::ping::register(command))
                 .create_application_command(|command| commands::satisfaction::register(command))
+                .create_application_command(|command| commands::unsatisfaction::register(command))
+                .create_application_command(|command| commands::draken::register(command))
+                .create_application_command(|command| commands::briten::register(command))
         })
         .await;
 
