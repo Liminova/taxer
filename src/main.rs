@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let framework = poise::Framework::builder()
         .options(FrameworkOptions {
-            commands: vec![commands::ping::ping()],
+            commands: vec![commands::ping::ping(), commands::help::help()],
             on_error: |error| {
                 Box::pin(async move {
                     match error {
