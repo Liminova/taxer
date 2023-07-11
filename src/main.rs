@@ -1,53 +1,59 @@
 use dotenvy::dotenv;
-use serenity::{
-    async_trait,
-    model::prelude::{command::Command, interaction::Interaction, Ready},
-    prelude::*,
-};
+use poise::{serenity_prelude as serenity, FrameworkOptions};
 use std::env;
+use tracing::error;
 
 mod commands;
 
-struct Handler;
-
-#[async_trait]
-impl EventHandler for Handler {
-    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::ApplicationCommand(command) = interaction {
-            println!("Received command interaction: {:#?}", command);
-
-            if let Err(why) = match command.data.name.as_str() {
-                "ping" => commands::ping::run(&command, &ctx).await,
-                _ => Ok(()),
-            } {
-                println!("cannot respond to slash command: {:#?}", why);
-            };
-        }
-    }
-
-    async fn ready(&self, ctx: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
-
-        let commands = Command::set_global_application_commands(&ctx.http, |commands| {
-            commands.create_application_command(|command| commands::ping::register(command))
-        })
-        .await;
-
-        println!("i now have the following slash commands: {:#?}", commands)
-    }
-}
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
+pub struct Data;
 
 #[tokio::main]
-async fn main() {
-    dotenv().expect(".env file not found.");
-    let token = env::var("DISCORD_TOKEN").expect("expected a Discord token in the environment.");
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    dotenv().expect("failed to load .env file.");
+    tracing_subscriber::fmt::init();
 
-    let mut client = Client::builder(token, GatewayIntents::empty())
-        .event_handler(Handler)
-        .await
-        .expect("error creating client.");
+    let framework = poise::Framework::builder()
+        .options(FrameworkOptions {
+            commands: vec![commands::ping::ping()],
+            on_error: |error| {
+                Box::pin(async move {
+                    match error {
+                        poise::FrameworkError::ArgumentParse { error, .. } => {
+                            if let Some(e) = error.downcast_ref::<serenity::RoleParseError>() {
+                                error!("found a RoleParseError: {:#?}", e);
+                            } else {
+                                error!("not a RoleParseError: {:#?}", error);
+                            }
+                        }
+                        other => {
+                            if let Err(e) = poise::builtins::on_error(other).await {
+                                error!("fatal error: {}", e);
+                            }
+                        }
+                    }
+                })
+            },
+            prefix_options: poise::PrefixFrameworkOptions {
+                prefix: Some("t!".into()),
+                case_insensitive_commands: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .token(env::var("DISCORD_TOKEN").unwrap())
+        .intents(
+            serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT,
+        )
+        .setup(move |ctx, _ready, framework| {
+            Box::pin(async move {
+                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                Ok(Data)
+            })
+        });
 
-    if let Err(why) = client.start().await {
-        println!("client error: {:#?}", why);
-    }
+    framework.run().await.unwrap();
+
+    Ok(())
 }
