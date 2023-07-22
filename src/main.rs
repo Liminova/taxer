@@ -20,6 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 commands::ping::ping(),
                 commands::help::help(),
                 commands::qt::qt(),
+                commands::play::play(),
             ],
             on_error: |error| {
                 Box::pin(async move {
