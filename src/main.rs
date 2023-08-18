@@ -2,7 +2,6 @@ use dotenvy::dotenv;
 use poise::{serenity_prelude as serenity, FrameworkOptions};
 use std::env;
 use tracing::error;
-
 mod commands;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -13,7 +12,6 @@ pub struct Data;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().expect("failed to load .env file.");
     tracing_subscriber::fmt::init();
-
     let framework = poise::Framework::builder()
         .options(FrameworkOptions {
             commands: vec![
