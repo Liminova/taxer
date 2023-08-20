@@ -1,5 +1,4 @@
 use crate::{Context, Error};
-use dotenv::dotenv;
 use dotenvy::dotenv;
 use google_maps::prelude::*;
 use sqlite::Connection;
@@ -36,6 +35,7 @@ pub async fn add(ctx: Context<'_>, location: String, name: String) -> Result<(),
         .replace(" km", "")
         .parse::<f64>()
         .unwrap();
+
     let distance_from_lb = query.rows[0].elements[1]
         .distance
         .clone()
@@ -45,9 +45,10 @@ pub async fn add(ctx: Context<'_>, location: String, name: String) -> Result<(),
         .parse::<f64>()
         .unwrap();
     let insert = format!(
-        "INSERT INTO db VALUES ({}, {}, {}, {})",
-        location, name, distance_from_LB, distance_from_H
+        "INSERT INTO db  VALUES ({}, {}, {}, {})",
+        location, name, distance_from_lb, distance_from_hust
     );
-    connection.execute(insert, []).unwrap();
+    connection.execute(insert).expect("Duplicated name");
     ctx.send(|f| f.content("Added successfully!")).await?;
+    Ok(())
 }
