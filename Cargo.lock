@@ -1794,6 +1794,7 @@ dependencies = [
  "dotenvy",
  "google_maps",
  "poise",
+ "rand",
  "sqlite",
  "tokio",
  "tracing",
