@@ -5,7 +5,7 @@ fn main() {
     let check = "
     CREATE TABLE IF NOT EXISTS db(
         Address TEXT NOT NULL,
-        Name TEXT NOT NULL,
+        Name TEXT NOT NULL UNIQUE,
         Distance_from_LB REAL NOT NULL,
         Distance_from_HUST REAL NOT NULL
     )
