@@ -1,6 +1,10 @@
-use dotenvy::dotenv;
-use poise::{serenity_prelude as serenity, FrameworkOptions};
 use std::env;
+
+use dotenvy::dotenv;
+use poise::{
+    serenity_prelude::{ClientBuilder, Error as SerenityError, GatewayIntents},
+    FrameworkError, FrameworkOptions,
+};
 use tracing::error;
 
 mod commands;
