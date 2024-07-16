@@ -13,7 +13,6 @@ use tracing::{error, info};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
-pub struct Data;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
