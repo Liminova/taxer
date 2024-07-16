@@ -20,6 +20,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         info!("failed to load .env file: {}", e);
     }
 
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
     let framework = poise::Framework::builder()
         .options(FrameworkOptions {
             prefix_options: poise::PrefixFrameworkOptions {
