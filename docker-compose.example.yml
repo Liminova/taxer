@@ -1,6 +1,7 @@
 services:
     taxer:
         image: taxer
+        container_name: taxer
         restart: unless-stopped
         pull_policy: never
         build:
