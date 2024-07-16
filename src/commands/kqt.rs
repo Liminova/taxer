@@ -5,6 +5,8 @@ use poise::{
 
 use crate::{Context, Error};
 
+use super::also_btn::AlsoButtonCreator;
+
 const KQT_BTN_ID: &str = "kqt-btn";
 const KQT_BTN_LABEL: &str = "Yêu cầu tìm ra người đã hỏi";
 const KQT_TEXT: &str = "<@USER> đã đéo hỏi.";
@@ -16,7 +18,7 @@ pub async fn kqt(
     ctx: Context<'_>,
     #[description = "Message ID of the message to reference"] ref_msg_id: Option<String>,
 ) -> Result<(), Error> {
-    let also_btn = super::also_btn::AlsoButton::new(
+    let also_btn = AlsoButtonCreator::new(
         KQT_BTN_ID,
         KQT_BTN_LABEL,
         ButtonStyle::Danger,
@@ -81,7 +83,7 @@ pub async fn kqt(
 
 #[poise::command(context_menu_command = "<user> đã đéo hỏi.")]
 pub async fn kqt_cm(ctx: Context<'_>, ref_msg: Message) -> Result<(), Error> {
-    let also_btn = super::also_btn::AlsoButton::new(
+    let also_btn = AlsoButtonCreator::new(
         KQT_BTN_ID,
         KQT_BTN_LABEL,
         ButtonStyle::Danger,

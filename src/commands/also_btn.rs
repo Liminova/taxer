@@ -5,16 +5,16 @@ use poise::serenity_prelude::{
     CreateInteractionResponse, CreateInteractionResponseMessage, CreateMessage, MessageId,
 };
 
-pub struct AlsoButton {
+pub struct AlsoButtonCreator {
     btn_id: String,
     btn_label: String,
     btn_style: ButtonStyle,
     also_msg: String,
 }
 
-impl AlsoButton {
+impl AlsoButtonCreator {
     pub fn new(btn_id: &str, btn_label: &str, btn_style: ButtonStyle, also_msg: &str) -> Self {
-        AlsoButton {
+        AlsoButtonCreator {
             btn_id: btn_id.to_string(),
             btn_label: btn_label.to_string(),
             btn_style,

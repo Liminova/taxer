@@ -16,7 +16,7 @@ pub async fn qt(
     ctx: Context<'_>,
     #[description = "Message ID of the message to reference"] ref_msg_id: Option<String>,
 ) -> Result<(), Error> {
-    let also_btn = super::also_btn::AlsoButton::new(
+    let also_btn = super::also_btn::AlsoButtonCreator::new(
         QUANTAM_BTN_ID,
         QUANTAM_BTN_LABEL,
         ButtonStyle::Success,
@@ -86,7 +86,7 @@ pub async fn qt(
 
 #[poise::command(context_menu_command = "Quan tâm")]
 pub async fn qt_cm(ctx: Context<'_>, ref_msg: Message) -> Result<(), Error> {
-    let also_btn = super::also_btn::AlsoButton::new(
+    let also_btn = super::also_btn::AlsoButtonCreator::new(
         QUANTAM_BTN_ID,
         QUANTAM_BTN_LABEL,
         ButtonStyle::Success,
