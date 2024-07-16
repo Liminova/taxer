@@ -64,7 +64,7 @@ pub async fn qt(
                 .send_message(
                     &ctx.serenity_context(),
                     CreateMessage::default()
-                        .content(QUANTAM_ALSO_TEXT.replace("USER", &ctx.author().id.to_string()))
+                        .content(QUANTAM_TEXT.replace("USER", &ctx.author().id.to_string()))
                         .components(also_btn.create(Some(ref_msg.id)))
                         .reference_message(&ref_msg),
                 )
