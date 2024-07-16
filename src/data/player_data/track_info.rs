@@ -69,7 +69,7 @@ impl TrackInfo {
         //  | lyrics music video
         //  | lyrics video
         let re = regex::Regex::new(
-            r"(?gim) (\(|\[|\| )( ?(official|mv|audio|video|music|lyrics|lyric) ?)+(\)|\]|)?",
+            r"(?im) (\(|\[|\| )( ?(official|mv|audio|video|music|lyrics|lyric) ?)+(\)|\]|)?",
         );
 
         if let Ok(re) = re {
