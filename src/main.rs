@@ -16,8 +16,9 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv().expect("failed to load .env file.");
-    tracing_subscriber::fmt::init();
+    if let Err(e) = dotenv() {
+        info!("failed to load .env file: {}", e);
+    }
 
     let framework = poise::Framework::builder()
         .options(FrameworkOptions {
