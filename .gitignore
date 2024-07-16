@@ -16,6 +16,6 @@ cscope.out
 cscope.in.out
 cscope.op.out
 .env
-docker-compose.example.yml
+docker-compose.yml
 bun.lockb
 .vscode
