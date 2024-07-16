@@ -1,0 +1,13 @@
+services:
+    taxer:
+        image: taxer
+        restart: unless-stopped
+        pull_policy: never
+        build:
+            context: .
+            dockerfile: Dockerfile
+        environment:
+            DISCORD_TOKEN:
+
+            YT_DLP_PATH:
+            FFMPEG_PATH:
