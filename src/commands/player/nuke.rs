@@ -1,19 +1,19 @@
-use poise::CreateReply;
-use tracing::error;
-
 use crate::{data::player_data::GuildChannelID, Context, Error};
 
 /// Stop everything, clear the queue and leave the voice channel
 #[poise::command(prefix_command, slash_command, guild_only)]
 pub async fn nuke(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.defer().await?;
+    let _ = ctx.defer().await;
 
     // cloning and creating necessary identifiers
     let player_data = ctx.data().player_data.clone();
-    let guild_id = ctx
-        .guild()
-        .ok_or("stop: guild not found from where the command was invoked")?
-        .id;
+    let guild_id = match ctx.guild().map(|guild| guild.id) {
+        Some(guild_id) => guild_id,
+        None => {
+            let _ = ctx.say("This command must be invoke in a guild!").await;
+            return Ok(());
+        }
+    };
     let guild_channel_id = GuildChannelID::from((guild_id, ctx.channel_id()));
 
     // send nuke signal to /play commands
@@ -23,19 +23,18 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), Error> {
         .nuke_signal
         .send(guild_channel_id.clone());
 
-    let songbird_manager = songbird::get(ctx.serenity_context())
-        .await
-        .ok_or("stop: songbird not loaded")?;
+    let songbird_manager = match songbird::get(ctx.serenity_context()).await {
+        Some(songbird_manager) => songbird_manager,
+        None => {
+            let _ = ctx.say("Can't get Songbird manager!").await;
+            return Err("commands::player::nuke: songbird not loaded".into());
+        }
+    };
 
     let call = match songbird_manager.get(guild_id) {
         Some(call) => call,
         None => {
-            if let Err(e) = ctx
-                .send(CreateReply::default().content("Not in a voice channel"))
-                .await
-            {
-                error!("failed to send the message: {}", e);
-            };
+            let _ = ctx.say("Not in a voice channel.").await;
             return Ok(());
         }
     };
@@ -68,10 +67,9 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), Error> {
         let track_id = track_2_channel
             .iter()
             .find_map(|(track_id, guild_channel_id_in_map)| {
-                if guild_channel_id_in_map == &guild_channel_id {
-                    Some(*track_id)
-                } else {
-                    None
+                match guild_channel_id_in_map == &guild_channel_id {
+                    true => Some(*track_id),
+                    false => None,
                 }
             });
         if let Some(track_id) = track_id {
@@ -79,7 +77,7 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), Error> {
         }
     }
 
-    ctx.say("💥 Nuked!").await?;
+    let _ = ctx.say("💥 Nuked!").await;
 
     Ok(())
 }

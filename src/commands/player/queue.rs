@@ -7,15 +7,20 @@ use crate::{data::player_data::GuildChannelID, Context, Error};
 /// List all tracks in the queue
 #[poise::command(prefix_command, slash_command, guild_only)]
 pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
-    let guild_id = ctx
-        .guild()
-        .ok_or("commands::play: guild not found from where the command was invoked")?
-        .id;
+    // get GuildChannelID
+    let guild_id = match ctx.guild().map(|guild| guild.id) {
+        Some(guild_id) => guild_id,
+        None => {
+            let _ = ctx.say("This command must be invoke in a guild!").await;
+            return Ok(());
+        }
+    };
     let guild_channel_id = {
         let channel_id = ctx.channel_id();
         GuildChannelID::from((guild_id, channel_id))
     };
 
+    // get corresponding playlist
     let playlist = {
         let player_data = ctx.data().player_data.clone();
         let playlists = player_data.playlist.lock().await;
@@ -26,11 +31,15 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     };
 
     if let Some(playlist) = playlist {
-        // get the playing track info
+        // get playing track info
         let playing_track_id: Option<Uuid> = 'scoped: {
-            let songbird_manager = songbird::get(ctx.serenity_context())
-                .await
-                .ok_or("commands::player::pause: songbird not loaded")?;
+            let songbird_manager = match songbird::get(ctx.serenity_context()).await {
+                Some(songbird_manager) => songbird_manager,
+                None => {
+                    let _ = ctx.say("Can't get Songbird manager!").await;
+                    return Err("commands::player::queue: songbird not loaded".into());
+                }
+            };
             let call = match songbird_manager.get(guild_id) {
                 Some(call) => call,
                 None => break 'scoped None,
@@ -93,16 +102,14 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
             embed = embed.thumbnail(thumbnail);
         }
 
-        ctx.send(CreateReply::default().embed(embed))
-            .await
-            .map_err(|e| format!("commands::queue: failed to send the message [2]: {}", e))?;
+        let _ = ctx.send(CreateReply::default().embed(embed)).await;
 
         return Ok(());
     }
 
-    ctx.send(CreateReply::default().content("It's empty").ephemeral(true))
-        .await
-        .map_err(|e| format!("commands::queue: failed to send the message [3]: {}", e))?;
+    let _ = ctx
+        .send(CreateReply::default().content("It's empty").ephemeral(true))
+        .await;
 
     Ok(())
 }

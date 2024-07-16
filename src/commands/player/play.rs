@@ -21,38 +21,50 @@ pub async fn play(
     #[description = "Anything `yt-dlp` supports"] url: String,
 ) -> Result<(), Error> {
     let url = match url.trim() {
-        "" => return Err("play: URL is empty".into()),
+        "" => return Err("commands::player::play: URL is empty".into()),
         _ => url,
     };
-
-    // =========================
-    // 1. Getting necessary data
-    // =========================
-
     let player_data = ctx.data().player_data.clone();
-    let guild_id = ctx
-        .guild()
-        .ok_or("play: this command must be invoke in a guild")?
-        .id;
-    let voice_channel_id = ctx
-        .guild()
-        .ok_or("play: this command must be invoke in a guild")?
-        .voice_states
-        .get(&ctx.author().id)
-        .and_then(|voice_state| voice_state.channel_id)
-        .ok_or("play: you are not in a voice channel")?;
+
+    // get guild/voice/text channel IDs
+    let guild_id = match ctx.guild_id() {
+        Some(guild_id) => guild_id,
+        None => {
+            let _ = ctx.say("This command must be invoke in a guild!").await;
+            return Ok(());
+        }
+    };
+    let voice_channel_id = match ctx.guild().and_then(|guild| {
+        guild
+            .voice_states
+            .get(&ctx.author().id)
+            .and_then(|voice_state| voice_state.channel_id)
+    }) {
+        Some(voice_channel_id) => voice_channel_id,
+        None => {
+            let _ = ctx.say("You're not in a voice channel!").await;
+            return Ok(());
+        }
+    };
     let guild_channel_id = GuildChannelID::from((guild_id, ctx.channel_id()));
 
     let call = {
-        let songbird_manager = songbird::get(ctx.serenity_context())
-            .await
-            .ok_or("play: songbird not loaded")?;
+        let songbird_manager = match songbird::get(ctx.serenity_context()).await {
+            Some(songbird_manager) => songbird_manager,
+            None => {
+                let _ = ctx.say("Can't get Songbird manager!").await;
+                return Ok(());
+            }
+        };
         match songbird_manager.get(guild_id) {
             Some(call) => call,
-            None => songbird_manager
-                .join(guild_id, voice_channel_id)
-                .await
-                .map_err(|e| format!("play: {}", e))?,
+            None => match songbird_manager.join(guild_id, voice_channel_id).await {
+                Ok(call) => call,
+                Err(e) => {
+                    let _ = ctx.say(format!("Can't join voice channel: {}", e)).await;
+                    return Ok(());
+                }
+            },
         }
     };
 
@@ -60,17 +72,15 @@ pub async fn play(
     {
         let mut call = call.lock().await;
         if !call.is_deaf() {
-            call.deafen(true)
-                .await
-                .map_err(|e| format!("play: failed to deafen the bot: {}", e))?;
+            let _ = call.deafen(true).await;
         }
     }
 
     // send initial message
-    let messenger = ctx
-        .send(CreateReply::default().content("Initializing `yt-dlp`..."))
+    let reply_handle = ctx
+        .say("Initializing...")
         .await
-        .map_err(|e| format!("play: failed to send the first message: {}", e))?;
+        .map_err(|e| format!("commands::player::play: can't send msg: {}", e))?;
 
     // add global event handlers once per guild
     if !player_data
@@ -122,7 +132,7 @@ pub async fn play(
         {
             Ok(yt_dlp_process) => yt_dlp_process,
             Err(e) => {
-                stop_tx.send(format!("failed to run yt-dlp: {}", e)).ok();
+                stop_tx.send(format!("can't run yt-dlp: {}", e)).ok();
                 return;
             }
         };
@@ -134,7 +144,7 @@ pub async fn play(
                 let line = match line {
                     Ok(line) => line,
                     Err(e) => {
-                        error!("failed to read yt-dlp output: {}", e);
+                        error!("can't read yt-dlp output: {}", e);
                         continue;
                     }
                 };
@@ -143,7 +153,7 @@ pub async fn play(
                 let mut track_info: TrackInfo = match serde_json::from_str(line.as_str()) {
                     Ok(track_info) => track_info,
                     Err(e) => {
-                        error!("failed to parse yt-dlp output: {}", e);
+                        error!("can't parse yt-dlp output: {}", e);
                         continue;
                     }
                 };
@@ -151,7 +161,7 @@ pub async fn play(
 
                 // send new track info
                 if let Err(e) = track_info_tx.send(Some(track_info)).await {
-                    error!("failed to send [new track info] signal: {}", e);
+                    error!("can't send new track to channel: {}", e);
                     continue;
                 }
             }
@@ -159,9 +169,9 @@ pub async fn play(
 
         // wait for yt-dlp to finish
         if let Err(e) = yt_dlp_process.wait() {
-            error!("failed to wait for yt-dlp to finish: {}", e);
+            error!("can't wait for yt-dlp to finish: {}", e);
             stop_tx
-                .send(format!("failed to wait for yt-dlp to finish: {}", e))
+                .send(format!("can't wait for yt-dlp to finish: {}", e))
                 .ok();
             return;
         }
@@ -170,7 +180,7 @@ pub async fn play(
 
         // if everything went well
         if let Err(e) = track_info_tx.send(None).await {
-            error!("failed to send [yt-dlp exited success] signal: {}", e);
+            error!("can't send None to channel: {}", e);
         }
     });
 
@@ -206,11 +216,11 @@ pub async fn play(
                             .spawn();
                         match proc {
                             Ok(mut proc) => if let Err(e) = proc.wait() {
-                                error!("failed to wait for yt-dlp to finish: {}", e);
+                                error!("can't wait for yt-dlp to finish: {}", e);
                                 continue;
                             },
                             Err(e) => {
-                                error!("failed to spawn yt-dlp process to download track: {}", e);
+                                error!("can't spawn yt-dlp process to download track: {}", e);
                                 continue;
                             }
                         };
@@ -221,7 +231,7 @@ pub async fn play(
                                 Some(Track::new_with_uuid(input.into(), track_info.id))
                             }
                             Err(e) => {
-                                error!("failed to get input path: {}", e);
+                                error!("can't get input path: {}", e);
                                 None
                             },
                         }
@@ -234,18 +244,10 @@ pub async fn play(
 
                     // update message
                     track_count += 1;
-                    let _ = messenger
-                        .edit(
-                            ctx,
-                            CreateReply::default().content(format!(
-                                "Adding `{}` track{} to the queue...",
-                                track_count, if track_count > 1 { "s" } else { "" }
-                            )),
-                        )
-                        .await
-                        .map_err(|e| {
-                            format!("play: failed to edit the message: {}", e)
-                        });
+                    let _ = reply_handle.edit(ctx, CreateReply::default().content(format!(
+                        "Adding `{}` track{} to the queue...",
+                        track_count, if track_count > 1 { "s" } else { "" }
+                    ))).await;
 
                     { // push to global playlist, in closure avoid long-locking
                         let mut playlist = player_data.playlist.lock().await;
@@ -277,22 +279,13 @@ pub async fn play(
                     1 => "Added `1` track to the queue!".to_string(),
                     count => format!("Added `{}` tracks to the queue!", count),
                 };
-                messenger
-                    .edit(
-                        ctx,
-                        CreateReply::default().content(content),
-                    )
-                    .await
-                    .map_err(|e| {
-                        yt_dlp_thread_handle.abort();
-                        format!("play: failed to edit the message: {}", e)
-                    })?;
+                let _ = reply_handle.edit(ctx, CreateReply::default().content(content)).await;
 
                 break;
             },
             Ok(err) = &mut stop_rx => {
                 error!("yt-dlp thread stopped: {}", err);
-                ctx.channel_id().send_message(
+                let _ = ctx.channel_id().send_message(
                     ctx.serenity_context().http.clone(),
                     CreateMessage::default().embed(
                         CreateEmbed::default()
@@ -300,11 +293,7 @@ pub async fn play(
                             .description(err),
                     ),
                 )
-                .await
-                .map_err(|e| {
-                    yt_dlp_thread_handle.abort();
-                    format!("play: failed to send the message: {}", e)
-                })?;
+                .await;
                 break;
             },
             target_guild_channel_id = nuke_signal.recv() => {

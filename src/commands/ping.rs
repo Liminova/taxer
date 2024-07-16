@@ -19,38 +19,38 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
         .and_then(|runner| runner.latency);
 
     if let Some(latency) = latency {
-        ctx.send(
+        let _ = ctx
+            .send(
+                CreateReply::default().embed(
+                    CreateEmbed::new()
+                        .title("Pong!")
+                        .description(format!("Latency: {}ms", latency.as_millis()))
+                        .color(0x00ff00)
+                        .footer(CreateEmbedFooter::new(format!(
+                            "Rustc version: {}",
+                            rustc_version_runtime::version()
+                        ))),
+                ),
+            )
+            .await;
+
+        return Ok(());
+    }
+
+    let _ = ctx
+        .send(
             CreateReply::default().embed(
                 CreateEmbed::new()
                     .title("Pong!")
-                    .description(format!("Latency: {}ms", latency.as_millis()))
-                    .color(0x00ff00)
+                    .description("Try again later")
+                    .color(0xff3300)
                     .footer(CreateEmbedFooter::new(format!(
                         "Rustc version: {}",
                         rustc_version_runtime::version()
                     ))),
             ),
         )
-        .await
-        .map_err(|e| format!("commands::ping: can't send message: {}", e))?;
-
-        return Ok(());
-    }
-
-    ctx.send(
-        CreateReply::default().embed(
-            CreateEmbed::new()
-                .title("Pong!")
-                .description("Try again later")
-                .color(0xff3300)
-                .footer(CreateEmbedFooter::new(format!(
-                    "Rustc version: {}",
-                    rustc_version_runtime::version()
-                ))),
-        ),
-    )
-    .await
-    .map_err(|e| format!("commands::ping: can't send message: {}", e))?;
+        .await;
 
     Ok(())
 }
