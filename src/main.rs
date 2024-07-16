@@ -113,20 +113,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .build();
 
-    let client = ClientBuilder::new(
-        &env::var("DISCORD_TOKEN").expect("DISCORD_TOKEN is not set"),
+    ClientBuilder::new(
+        discord_token,
         GatewayIntents::non_privileged()
             | GatewayIntents::GUILD_MESSAGES
             | GatewayIntents::DIRECT_MESSAGES
-            | GatewayIntents::MESSAGE_CONTENT,
+            | GatewayIntents::MESSAGE_CONTENT
+            | GatewayIntents::GUILD_VOICE_STATES,
     )
+    .register_songbird()
     .framework(framework)
-    .await;
-
-    if let Err(e) = client.unwrap().start().await {
-        error!("error: {:#?}", e);
-        std::process::exit(1);
-    }
+    .await
+    .expect("Failed to create Discord client")
+    .start()
+    .await
+    .expect("Failed to start Discord client");
 
     Ok(())
 }
