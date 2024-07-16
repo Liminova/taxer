@@ -124,6 +124,8 @@ pub async fn play(
         // create yt-dlp process
         let mut yt_dlp_process = match Command::new(yt_dlp_path)
             .arg("-x")
+            .arg("--default-search")
+            .arg("ytsearch")
             .arg("--skip-download")
             .arg("--print-json")
             .arg(&url)
