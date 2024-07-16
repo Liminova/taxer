@@ -6,8 +6,11 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
+        volumes:
+            - <YT-DLP-PATH>:/usr/local/bin/yt-dlp
+            - <FFMPEG-PATH>:/usr/local/bin/ffmpeg
         environment:
             DISCORD_TOKEN:
 
-            YT_DLP_PATH:
-            FFMPEG_PATH:
+            YT_DLP_PATH: /usr/local/bin/yt-dlp
+            FFMPEG_PATH: /usr/local/bin/ffmpeg
