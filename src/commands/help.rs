@@ -10,6 +10,7 @@ pub async fn help(
         extra_text_at_bottom: "\
 Type t!help <command> for extra help on a command.
 You can edit your message to the bot and it will edit its response.",
+        ephemeral: true,
         ..Default::default()
     };
 
