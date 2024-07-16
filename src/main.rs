@@ -50,16 +50,56 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             on_error: |error: FrameworkError<Data, Error>| {
                 Box::pin(async move {
                     match error {
+                        // args parse error
                         poise::FrameworkError::ArgumentParse { error, .. } => {
-                            match error.downcast_ref::<SerenityError>() {
-                                Some(e) => error!("error: {:#?}", e),
-                                None => error!("unknown error: {:#?}", error),
+                            if let Some(error) =
+                                error.downcast_ref::<poise::serenity_prelude::RoleParseError>()
+                            {
+                                println!("Found a RoleParseError: {:?}", error);
+                                return;
+                            }
+                            error!("ArgumentParse error: {}", error);
+                        }
+
+                        // error in commands
+                        poise::FrameworkError::Command { error, ctx, .. } => {
+                            error!("Command error: {}", error);
+
+                            if let Some(guild_channel) = ctx.guild_channel().await {
+                                let _ = guild_channel
+                                    .send_message(
+                                        ctx.serenity_context(),
+                                        CreateMessage::default().embed(
+                                            CreateEmbed::default()
+                                                .title("Command Error")
+                                                .description(error.to_string())
+                                                .color(0xFF0000),
+                                        ),
+                                    )
+                                    .await;
+                            };
+                        }
+
+                        // other errors
+                        other => {
+                            error!("other error: {}", other);
+                            // try to send error message to Discord
+                            if let Some(ctx) = other.ctx() {
+                                if let Some(guild_channel) = ctx.guild_channel().await {
+                                    let _ = guild_channel
+                                        .send_message(
+                                            ctx.serenity_context(),
+                                            CreateMessage::default().embed(
+                                                CreateEmbed::default()
+                                                    .title("Other Error")
+                                                    .description(other.to_string())
+                                                    .color(0xFF0000),
+                                            ),
+                                        )
+                                        .await;
+                                };
                             }
                         }
-                        other => match poise::builtins::on_error(other).await {
-                            Ok(_) => (),
-                            Err(e) => error!("fatal error: {}", e),
-                        },
                     }
                 })
             },
