@@ -1,13 +1,15 @@
-use std::env;
+mod commands;
+mod data;
+
+use data::{config::Config, Data};
 
 use dotenvy::dotenv;
 use poise::{
-    serenity_prelude::{ClientBuilder, Error as SerenityError, GatewayIntents},
+    serenity_prelude::{ClientBuilder, CreateEmbed, CreateMessage, GatewayIntents},
     FrameworkError, FrameworkOptions,
 };
-use tracing::error;
-
-mod commands;
+use songbird::SerenityInit;
+use tracing::{error, info};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
