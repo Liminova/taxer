@@ -23,6 +23,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
         .init();
+
+    let config = Config::init();
+    let discord_token = config.discord_token.clone();
+
     let framework = poise::Framework::builder()
         .options(FrameworkOptions {
             prefix_options: poise::PrefixFrameworkOptions {
