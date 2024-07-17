@@ -18,11 +18,11 @@ use uuid::Uuid;
 #[poise::command(prefix_command, slash_command, guild_only)]
 pub async fn play(
     ctx: Context<'_>,
-    #[description = "Anything `yt-dlp` supports"] url: String,
+    #[description = "URLs supported by `yt-dlp` or YT search query"] query: String,
 ) -> Result<(), Error> {
-    let url = match url.trim() {
-        "" => return Err("commands::player::play: URL is empty".into()),
-        _ => url,
+    let url = match query.trim() {
+        "" => return Err("commands::player::play: query is empty".into()),
+        _ => query,
     };
     let player_data = ctx.data().player_data.clone();
 
