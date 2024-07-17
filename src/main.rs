@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         CreateMessage::default().embed(
                                             CreateEmbed::default()
                                                 .title("Command Error")
-                                                .description(error.to_string())
+                                                .description(format!("`{}`", error))
                                                 .color(0xFF0000),
                                         ),
                                     )
@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                             CreateMessage::default().embed(
                                                 CreateEmbed::default()
                                                     .title("Other Error")
-                                                    .description(other.to_string())
+                                                    .description(format!("`{}`", other))
                                                     .color(0xFF0000),
                                             ),
                                         )
