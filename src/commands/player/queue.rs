@@ -11,7 +11,7 @@ use uuid::Uuid;
     let guild_id = match ctx.guild().map(|guild| guild.id) {
 pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
         Some(guild_id) => guild_id,
-        None => {
+        _ => {
             if let Err(e) = ctx.say("This command must be invoke in a guild!").await {
                 tracing::warn!("can't send message 'guild command only': {}", e);
             }
