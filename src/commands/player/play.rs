@@ -8,9 +8,8 @@ use std::{collections::VecDeque, io::BufRead, process::Command};
 use anyhow::anyhow;
 use poise::{
     serenity_prelude::{CreateEmbed, CreateMessage},
-    CreateReply,
+    CreateReply, ReplyHandle,
 };
-use reqwest::header::{HeaderMap, HeaderValue};
 use songbird::{input::HttpRequest, tracks::Track};
 use tracing::error;
 use uuid::Uuid;
