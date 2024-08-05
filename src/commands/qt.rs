@@ -1,110 +1,34 @@
-use poise::{
-    serenity_prelude::{ButtonStyle, CreateMessage, Message},
-    CreateReply,
-};
+use super::text_reaction::TextReactionBuilder;
+use crate::{AppError, Context};
 
-use crate::{Context, Error};
-
-const QUANTAM_BTN_ID: &str = "qt-btn";
-const QUANTAM_BTN_LABEL: &str = "Thể hiện sự quan tâm của bạn";
-const QUANTAM_TEXT: &str = "<@USER> đã thể hiện sự quan tâm.";
-const QUANTAM_ALSO_TEXT: &str = "<@USER> cũng thể hiện sự quan tâm.";
+use poise::serenity_prelude::{ButtonStyle, Message};
 
 /// Thể hiện sự quan tâm
 #[poise::command(prefix_command, slash_command)]
 pub async fn qt(
     ctx: Context<'_>,
     #[description = "Message ID of the message to reference"] ref_msg_id: Option<String>,
-) -> Result<(), Error> {
-    let also_btn = super::also_btn::AlsoButtonCreator::new(
-        QUANTAM_BTN_ID,
-        QUANTAM_BTN_LABEL,
-        ButtonStyle::Success,
-        QUANTAM_ALSO_TEXT,
-    );
-
-    // get the ref msg given the msg id from the given arg
-    let ref_msg_arg = match ref_msg_id.as_ref().and_then(|s| s.parse::<u64>().ok()) {
-        Some(ref_msg) => match ctx
-            .channel_id()
-            .message(&ctx.serenity_context(), ref_msg)
-            .await
-        {
-            Ok(ref_msg) => Some(ref_msg),
-            Err(_) => None,
-        },
-        _ => None,
-    };
-
-    // to reference the replied msg, not the command msg itself
-    if let Context::Prefix(pctx) = ctx {
-        if let Some(ref_msg) = pctx.msg.referenced_message.as_ref() {
-            let ref_msg = *ref_msg.clone();
-            pctx.msg
-                .channel_id
-                .send_message(
-                    &ctx.serenity_context(),
-                    CreateMessage::default()
-                        .content(QUANTAM_TEXT.replace("USER", &ctx.author().id.to_string()))
-                        .components(also_btn.create(Some(ref_msg.id)))
-                        .reference_message(&ref_msg),
-                )
-                .await?;
-            return also_btn.handler(ctx).await;
-        }
-    }
-
-    match ref_msg_arg {
-        // if ref-msg-id provided, reply it
-        Some(ref_msg) => {
-            ctx.send(CreateReply::default().content("cứ từ từ").ephemeral(true))
-                .await?;
-
-            ctx.channel_id()
-                .send_message(
-                    &ctx.serenity_context(),
-                    CreateMessage::default()
-                        .content(QUANTAM_TEXT.replace("USER", &ctx.author().id.to_string()))
-                        .components(also_btn.create(Some(ref_msg.id)))
-                        .reference_message(&ref_msg),
-                )
-                .await?;
-        }
-        // else reply the user's command
-        None => {
-            ctx.send(
-                CreateReply::default()
-                    .content(QUANTAM_TEXT.replace("USER", &ctx.author().id.to_string()))
-                    .components(also_btn.create(None)),
-            )
-            .await?;
-        }
-    };
-
-    also_btn.handler(ctx).await
+) -> Result<(), AppError> {
+    let text_reaction = TextReactionBuilder::default()
+        .set_label("<@USER> đã thể hiện sự quan tâm.")
+        .set_also_label("<@USER> cũng thể hiện sự quan tâm.")
+        .set_button_label("Thể hiện sự quan tâm của bạn")
+        .set_custom_id("qt-btn")
+        .set_button_style(ButtonStyle::Success)
+        .set_ref_msg_id(ref_msg_id)
+        .build();
+    text_reaction.slash_command(&ctx).await
 }
 
 #[poise::command(context_menu_command = "Quan tâm")]
-pub async fn qt_cm(ctx: Context<'_>, ref_msg: Message) -> Result<(), Error> {
-    let also_btn = super::also_btn::AlsoButtonCreator::new(
-        QUANTAM_BTN_ID,
-        QUANTAM_BTN_LABEL,
-        ButtonStyle::Success,
-        QUANTAM_ALSO_TEXT,
-    );
-
-    ctx.send(CreateReply::default().content("cứ từ từ").ephemeral(true))
-        .await?;
-
-    ctx.channel_id()
-        .send_message(
-            &ctx.serenity_context(),
-            CreateMessage::default()
-                .content(QUANTAM_TEXT.replace("USER", &ctx.author().id.to_string()))
-                .components(also_btn.create(Some(ref_msg.id)))
-                .reference_message(&ref_msg),
-        )
-        .await?;
-
-    also_btn.handler(ctx).await
+pub async fn qt_cm(ctx: Context<'_>, ref_msg: Message) -> Result<(), AppError> {
+    let text_reaction = TextReactionBuilder::default()
+        .set_label("<@USER> đã thể hiện sự quan tâm.")
+        .set_also_label("<@USER> cũng thể hiện sự quan tâm.")
+        .set_custom_id("qt-btn")
+        .set_button_label("Thể hiện sự quan tâm của bạn")
+        .set_button_style(ButtonStyle::Success)
+        .set_ref_msg_id(Some(ref_msg.id.to_string()))
+        .build();
+    text_reaction.context_menu_command(&ctx, &ref_msg).await
 }
