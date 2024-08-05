@@ -7,7 +7,7 @@ use data::{config::Config, Data};
 
 use dotenvy::dotenv;
 use poise::{
-    serenity_prelude::{ClientBuilder, CreateEmbed, CreateMessage, GatewayIntents},
+    serenity_prelude::{ClientBuilder, GatewayIntents},
     FrameworkError, FrameworkOptions,
 };
 use songbird::SerenityInit;
