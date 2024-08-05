@@ -205,10 +205,7 @@ pub async fn play(
                     // try to get a playable URL first
                     let songbird_track = if let Some(direct_url) = track_info.get_playable_url() {
                         let client = ctx.data().player_data.http_client.clone();
-                        let mut headers = HeaderMap::new();
-                        headers.insert("User-Agent", HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36"));
-                        let input = HttpRequest::new_with_headers(client, direct_url, headers);
-                        Some(Track::new_with_uuid(input.into(), track_info.id))
+                        Some(Track::new_with_uuid(HttpRequest::new(client, direct_url).into(), track_info.id))
                     } else { // else download the track w/ ffmpeg to convert to aac
                         let proc = std::process::Command::new(ctx.data().config.yt_dlp_path.clone())
                             .arg("--ffmpeg-location")
