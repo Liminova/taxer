@@ -1,4 +1,4 @@
-FROM rust:1.79.0-alpine3.20 AS builder
+FROM rust:alpine AS builder
 
 RUN apk add --no-cache make cmake musl-dev libssl3 g++ gcc git libressl-dev clang libstdc++-dev
 
