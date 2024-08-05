@@ -291,7 +291,11 @@ pub async fn play(
                     1 => "Added `1` track to the queue!".to_string(),
                     count => format!("Added `{}` tracks to the queue!", count),
                 };
-                let _ = reply_handle.edit(ctx, CreateReply::default().content(content)).await;
+                if let Some(reply_handle) = &reply_handle {
+                    if let Err(e) = reply_handle.edit(ctx, CreateReply::default().content(content)).await {
+                        tracing::warn!("can't edit reply: {}", e);
+                    }
+                }
 
                 break;
             },
