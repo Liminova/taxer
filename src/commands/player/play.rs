@@ -20,11 +20,12 @@ use uuid::Uuid;
 pub async fn play(
     ctx: Context<'_>,
     #[description = "URLs supported by `yt-dlp` or YT search query"] query: String,
-    let url = match query.trim() {
-        "" => return Err("commands::player::play: query is empty".into()),
-        _ => query,
-    };
 ) -> Result<(), AppError> {
+    if query.trim().is_empty() {
+        return Err(AppError::from(anyhow!(
+            "commands::player::play: query is empty, probably due to Discord's side"
+        )));
+    }
     let player_data = ctx.data().player_data.clone();
 
     // get guild/voice/text channel IDs
