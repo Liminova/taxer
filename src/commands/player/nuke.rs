@@ -70,17 +70,15 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), AppError> {
     // clear track -> GuildChannelID map
     {
         let mut track_2_channel = player_data.track_2_channel.lock().await;
-        let track_id = track_2_channel
+        track_2_channel
             .iter()
             .find_map(|(track_id, guild_channel_id_in_map)| {
                 match guild_channel_id_in_map == &guild_channel_id {
                     true => Some(*track_id),
                     false => None,
                 }
-            });
-        if let Some(track_id) = track_id {
-            track_2_channel.remove(&track_id);
-        }
+            })
+            .and_then(|track_id| track_2_channel.remove(&track_id));
     }
 
     if let Err(e) = ctx.say("💥 Nuked!").await {
