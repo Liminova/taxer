@@ -216,7 +216,7 @@ pub async fn play(
                             .arg("0")
                             .arg("-x")
                             .arg("-o")
-                            .arg(track_info.get_download_path())
+                            .arg(track_info.get_download_path(&guild_id))
                             .arg(&track_info.url)
                             .spawn();
                         match proc {
@@ -230,7 +230,7 @@ pub async fn play(
                             }
                         };
 
-                        match track_info.get_input_path() {
+                        match track_info.get_input_path(&guild_id) {
                             Ok(direct_url) => {
                                 let input = songbird::input::File::new(direct_url);
                                 Some(Track::new_with_uuid(input.into(), track_info.id))
