@@ -249,10 +249,17 @@ pub async fn play(
 
                     // update message
                     track_count += 1;
-                    let _ = reply_handle.edit(ctx, CreateReply::default().content(format!(
+                    let content = CreateReply::default().content(format!(
                         "Adding `{}` track{} to the queue...",
                         track_count, if track_count > 1 { "s" } else { "" }
-                    ))).await;
+                    ));
+                    if let Some(reply_handle) = &reply_handle {
+                        if let Err(e) = reply_handle.edit(ctx, content).await {
+                            tracing::warn!("can't edit reply: {}", e);
+                        }
+                    } else if let Err(e) = ctx.send(content).await {
+                        tracing::warn!("can't send message: {}", e);
+                    }
 
                     { // push to global playlist, in closure avoid long-locking
                         let mut playlist = player_data.playlist.lock().await;
