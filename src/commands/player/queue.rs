@@ -12,7 +12,9 @@ use uuid::Uuid;
 pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
         Some(guild_id) => guild_id,
         None => {
-            let _ = ctx.say("This command must be invoke in a guild!").await;
+            if let Err(e) = ctx.say("This command must be invoke in a guild!").await {
+                tracing::warn!("can't send message 'guild command only': {}", e);
+            }
             return Ok(());
         }
     };
@@ -108,9 +110,12 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
         return Ok(());
     }
 
-    let _ = ctx
+    if let Err(e) = ctx
         .send(CreateReply::default().content("It's empty").ephemeral(true))
-        .await;
+        .await
+    {
+        tracing::warn!("can't send message 'queue is empty': {}", e);
+    }
 
     Ok(())
 }

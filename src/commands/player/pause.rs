@@ -9,7 +9,9 @@ pub async fn pause(ctx: Context<'_>) -> Result<(), AppError> {
     let guild_id = match ctx.guild().map(|guild| guild.id) {
         Some(guild_id) => guild_id,
         None => {
-            let _ = ctx.say("This command must be invoke in a guild!").await;
+            if let Err(e) = ctx.say("This command must be invoke in a guild!").await {
+                tracing::warn!("can't send message 'guild command only': {}", e);
+            }
             return Ok(());
         }
     };
@@ -17,7 +19,9 @@ pub async fn pause(ctx: Context<'_>) -> Result<(), AppError> {
     let songbird_manager = match songbird::get(ctx.serenity_context()).await {
         Some(songbird_manager) => songbird_manager,
         None => {
-            let _ = ctx.say("Can't get Songbird manager!").await;
+            if let Err(e) = ctx.say("Can't get Songbird manager!").await {
+                tracing::warn!("can't send message 'can't get songbird manager': {}", e);
+            }
             return Ok(());
         }
     };
@@ -25,7 +29,9 @@ pub async fn pause(ctx: Context<'_>) -> Result<(), AppError> {
     let call = match songbird_manager.get(guild_id) {
         Some(call) => call,
         None => {
-            let _ = ctx.say("Not in a voice channel.").await;
+            if let Err(e) = ctx.say("Not in a voice channel.").await {
+                tracing::warn!("can't send message 'not in a voice channel': {}", e);
+            }
             return Ok(());
         }
     };
@@ -40,23 +46,30 @@ pub async fn pause(ctx: Context<'_>) -> Result<(), AppError> {
             }
             PlayMode::Pause => track_handle.play(),
             _ => {
-                let _ = ctx.say("Nothing was playing.").await;
+                if let Err(e) = ctx.say("Nothing was playing.").await {
+                    tracing::warn!("can't send message 'nothing was playing': {}", e);
+                }
                 return Ok(());
             }
         }
         .map_err(|e| format!("commands::player::pause: can't change playing state: {}", e))?;
 
-        let _ = ctx
+        if let Err(e) = ctx
             .say(match was_playing {
                 true => "⏸️ Paused",
                 false => "▶️ Resumed",
             })
-            .await;
+            .await
+        {
+            tracing::warn!("can't state send message: {}", e);
+        }
 
         return Ok(());
     }
 
-    let _ = ctx.say("Nothing was playing.").await;
+    if let Err(e) = ctx.say("Nothing was playing.").await {
+        tracing::warn!("can't send message 'nothing was playing': {}", e);
+    }
 
     Ok(())
 }

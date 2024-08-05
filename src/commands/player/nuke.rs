@@ -4,15 +4,19 @@ use anyhow::anyhow;
 
 /// Stop everything, clear the queue and leave the voice channel
 #[poise::command(prefix_command, slash_command, guild_only)]
-    let _ = ctx.defer().await;
 pub async fn nuke(ctx: Context<'_>) -> Result<(), AppError> {
+    if let Err(e) = ctx.defer().await {
+        return Err(AppError::from(anyhow!("can't send defer msg: {}", e)));
+    }
 
     // cloning and creating necessary identifiers
     let player_data = ctx.data().player_data.clone();
     let guild_id = match ctx.guild().map(|guild| guild.id) {
         Some(guild_id) => guild_id,
         None => {
-            let _ = ctx.say("This command must be invoke in a guild!").await;
+            if let Err(e) = ctx.say("This command must be invoke in a guild!").await {
+                tracing::warn!("can't send message 'guild command only': {}", e);
+            }
             return Ok(());
         }
     };
@@ -28,22 +32,27 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), AppError> {
     let songbird_manager = match songbird::get(ctx.serenity_context()).await {
         Some(songbird_manager) => songbird_manager,
         None => {
-            let _ = ctx.say("Can't get Songbird manager!").await;
-            return Err("commands::player::nuke: songbird not loaded".into());
+            return Err(AppError::from(anyhow!(
+                "commands::player::nuke: songbird not loaded"
+            )));
         }
     };
 
     let call = match songbird_manager.get(guild_id) {
         Some(call) => call,
         None => {
-            let _ = ctx.say("Not in a voice channel.").await;
+            if let Err(e) = ctx.say("Not in a voice channel.").await {
+                tracing::warn!("can't send message 'not in a voice channel': {}", e);
+            }
             return Ok(());
         }
     };
 
     // stop the call and clear the queue
     call.lock().await.stop();
-    let _ = songbird_manager.remove(guild_id).await;
+    if let Err(e) = songbird_manager.remove(guild_id).await {
+        tracing::warn!("can't disconnect from voice channel: {}", e);
+    }
 
     // clear global event handlers, in closure avoid long-locking
     {
@@ -79,7 +88,9 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), AppError> {
         }
     }
 
-    let _ = ctx.say("💥 Nuked!").await;
+    if let Err(e) = ctx.say("💥 Nuked!").await {
+        tracing::warn!("can't send message 'nuked': {}", e);
+    }
 
     Ok(())
 }

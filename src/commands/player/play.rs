@@ -31,7 +31,9 @@ pub async fn play(
     let guild_id = match ctx.guild_id() {
         Some(guild_id) => guild_id,
         None => {
-            let _ = ctx.say("This command must be invoke in a guild!").await;
+            if let Err(e) = ctx.say("This command must be invoke in a guild!").await {
+                tracing::warn!("can't send message 'guild command only': {}", e);
+            }
             return Ok(());
         }
     };
@@ -288,7 +290,7 @@ pub async fn play(
             },
             Ok(err) = &mut stop_rx => {
                 error!("yt-dlp thread stopped: {}", err);
-                let _ = ctx.channel_id().send_message(
+                if let Err(e) = ctx.channel_id().send_message(
                     ctx.serenity_context().http.clone(),
                     CreateMessage::default().embed(
                         CreateEmbed::default()
@@ -296,7 +298,9 @@ pub async fn play(
                             .description(err),
                     ),
                 )
-                .await;
+                .await {
+                    tracing::warn!("can't send message: {}", e);
+                }
                 break;
             },
             target_guild_channel_id = nuke_signal.recv() => {
