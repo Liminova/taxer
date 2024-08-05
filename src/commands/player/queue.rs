@@ -17,6 +17,7 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
             return Ok(());
         }
     };
+
     let guild_channel_id = {
         let channel_id = ctx.channel_id();
         GuildChannelID::from((guild_id, channel_id))
