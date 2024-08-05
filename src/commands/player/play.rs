@@ -76,7 +76,9 @@ pub async fn play(
     {
         let mut call = call.lock().await;
         if !call.is_deaf() {
-            let _ = call.deafen(true).await;
+            if let Err(e) = call.deafen(true).await {
+                tracing::warn!("can't deafen the bot: {}", e);
+            }
         }
     }
 
