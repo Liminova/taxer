@@ -81,44 +81,45 @@ impl TrackInfo {
     /// Get playable direct URL of the track from Vec<Format>.
     /// If the track is not available in any of the formats, return `None`.
     pub fn get_playable_url(&self) -> Option<String> {
-        if let Some(formats) = &self.formats {
-            let mut best_url = None;
-            let mut best_bitrate = 0.0;
+        let formats = match &self.formats {
+            Some(formats) => formats,
+            None => return None,
+        };
 
-            let mut mp3_url = None;
-            let mut mp3_bitrate = 0.0;
+        let mut best_url = None;
+        let mut best_bitrate = 0.0;
 
-            for format in formats.iter() {
-                if let (Some(codec), Some(bitrate)) = (format.codec.as_deref(), format.bitrate) {
-                    match codec {
-                        // lossless codecs, return immediately
-                        "alac" | "flac" | "pcm" => {
-                            return Some(format.url.clone());
-                        }
-                        // lossy codecs, can't go wrong when
-                        // choose one with the highest bitrate
-                        "opus" | "aac" | "vorbis" => {
-                            if bitrate > best_bitrate {
-                                best_url = Some(format.url.clone());
-                                best_bitrate = bitrate;
-                            }
-                        }
-                        // final resort if can't find a better one
-                        "mp3" => {
-                            if bitrate > mp3_bitrate {
-                                mp3_url = Some(format.url.clone());
-                                mp3_bitrate = bitrate;
-                            }
-                        }
-                        _ => (),
+        let mut mp3_url = None;
+        let mut mp3_bitrate = 0.0;
+
+        formats
+            .iter()
+            .filter_map(|format| match (format.codec.as_deref(), format.bitrate) {
+                (Some(codec), Some(bitrate)) => Some((codec, bitrate, &format.url)),
+                _ => None,
+            })
+            .for_each(|(codec, bitrate, url)| match codec {
+                "alac" | "flac" | "pcm" => {
+                    best_url = Some(url.clone());
+                    best_bitrate = bitrate;
+                }
+                "opus" | "aac" | "vorbis" => {
+                    if bitrate > best_bitrate {
+                        best_url = Some(url.clone());
+                        best_bitrate = bitrate;
                     }
                 }
-            }
+                // final resort if can't find a better one
+                "mp3" => {
+                    if bitrate > mp3_bitrate {
+                        mp3_url = Some(url.clone());
+                        mp3_bitrate = bitrate;
+                    }
+                }
+                _ => (),
+            });
 
-            return best_url.or(mp3_url);
-        }
-
-        None
+        best_url.or(mp3_url)
     }
 
     /// Get the output path for `yt-dlp` to download the track.
