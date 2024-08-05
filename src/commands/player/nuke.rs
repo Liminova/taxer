@@ -67,7 +67,7 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), AppError> {
     // clear playlist
     player_data.playlist.lock().await.remove(&guild_channel_id);
 
-    // clear track -> GuildChannelID map, in closure avoid long-locking
+    // clear track -> GuildChannelID map
     {
         let mut track_2_channel = player_data.track_2_channel.lock().await;
         let track_id = track_2_channel
