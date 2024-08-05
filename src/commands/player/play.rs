@@ -83,10 +83,10 @@ pub async fn play(
     }
 
     // send initial message
-    let reply_handle = ctx
-        .say("Initializing...")
-        .await
-        .map_err(|e| format!("commands::player::play: can't send msg: {}", e))?;
+    if let Err(e) = ctx.defer().await {
+        return Err(AppError::from(anyhow!("can't send defer msg: {}", e)));
+    }
+    let reply_handle: Option<ReplyHandle> = None;
 
     // add global event handlers once per guild
     if !player_data
