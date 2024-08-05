@@ -82,10 +82,7 @@ impl TrackInfo {
     /// Get playable direct URL of the track from Vec<Format>.
     /// If the track is not available in any of the formats, return `None`.
     pub fn get_playable_url(&self) -> Option<String> {
-        let formats = match &self.formats {
-            Some(formats) => formats,
-            None => return None,
-        };
+        let formats = self.formats.as_ref()?;
 
         let mut best_url = None;
         let mut best_bitrate = 0.0;
