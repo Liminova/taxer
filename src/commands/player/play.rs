@@ -261,7 +261,7 @@ pub async fn play(
                         tracing::warn!("can't send message: {}", e);
                     }
 
-                    { // push to global playlist, in closure avoid long-locking
+                    { // push to global playlist
                         let mut playlist = player_data.playlist.lock().await;
                         if let Some(playlist) = playlist.get_mut(&guild_channel_id) {
                             playlist.push_back(track_info.clone());
@@ -276,7 +276,7 @@ pub async fn play(
                         .await
                         .insert(track_info.id, guild_channel_id.clone());
 
-                    { // add track to the queue, in closure avoid long-locking
+                    { // add track to the queue
                         let mut call = call.lock().await;
                         let handle = call.enqueue(songbird_track).await;
                         let _ = handle.make_playable();
