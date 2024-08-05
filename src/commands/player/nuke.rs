@@ -1,9 +1,11 @@
-use crate::{data::player_data::GuildChannelID, Context, Error};
+use crate::{data::player_data::GuildChannelID, AppError, Context};
+
+use anyhow::anyhow;
 
 /// Stop everything, clear the queue and leave the voice channel
 #[poise::command(prefix_command, slash_command, guild_only)]
-pub async fn nuke(ctx: Context<'_>) -> Result<(), Error> {
     let _ = ctx.defer().await;
+pub async fn nuke(ctx: Context<'_>) -> Result<(), AppError> {
 
     // cloning and creating necessary identifiers
     let player_data = ctx.data().player_data.clone();

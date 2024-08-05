@@ -1,10 +1,11 @@
 use crate::{
     data::player_data::{GuildChannelID, TrackInfo},
-    Context, Error,
+    AppError, Context,
 };
 
 use std::{collections::VecDeque, io::BufRead, process::Command};
 
+use anyhow::anyhow;
 use poise::{
     serenity_prelude::{CreateEmbed, CreateMessage},
     CreateReply,
@@ -19,11 +20,11 @@ use uuid::Uuid;
 pub async fn play(
     ctx: Context<'_>,
     #[description = "URLs supported by `yt-dlp` or YT search query"] query: String,
-) -> Result<(), Error> {
     let url = match query.trim() {
         "" => return Err("commands::player::play: query is empty".into()),
         _ => query,
     };
+) -> Result<(), AppError> {
     let player_data = ctx.data().player_data.clone();
 
     // get guild/voice/text channel IDs

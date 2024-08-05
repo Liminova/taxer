@@ -1,14 +1,15 @@
+use crate::{data::player_data::GuildChannelID, AppError, Context};
+
+use anyhow::anyhow;
 use poise::{serenity_prelude::CreateEmbed, CreateReply};
 use songbird::tracks::PlayMode;
 use uuid::Uuid;
 
-use crate::{data::player_data::GuildChannelID, Context, Error};
-
 /// List all tracks in the queue
 #[poise::command(prefix_command, slash_command, guild_only)]
-pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     // get GuildChannelID
     let guild_id = match ctx.guild().map(|guild| guild.id) {
+pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
         Some(guild_id) => guild_id,
         None => {
             let _ = ctx.say("This command must be invoke in a guild!").await;

@@ -1,6 +1,8 @@
 mod commands;
 mod data;
 
+use std::fmt::Display;
+
 use data::{config::Config, Data};
 
 use dotenvy::dotenv;
@@ -11,8 +13,24 @@ use poise::{
 use songbird::SerenityInit;
 use tracing::{error, info};
 
-type Error = Box<dyn std::error::Error + Send + Sync>;
-type Context<'a> = poise::Context<'a, Data, Error>;
+#[derive(Debug)]
+pub struct AppError(anyhow::Error);
+impl<E> From<E> for AppError
+where
+    E: Into<anyhow::Error>,
+{
+    fn from(err: E) -> Self {
+        Self(err.into())
+    }
+}
+
+impl Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+type Context<'a> = poise::Context<'a, Data, AppError>;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -47,7 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 commands::player::queue(),
                 commands::player::nuke(),
             ],
-            on_error: |error: FrameworkError<Data, Error>| {
+            on_error: |error: FrameworkError<Data, AppError>| {
                 Box::pin(async move {
                     match error {
                         // args parse error

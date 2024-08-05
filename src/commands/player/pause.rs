@@ -1,10 +1,11 @@
 use songbird::tracks::PlayMode;
+use crate::{AppError, Context};
 
-use crate::{Context, Error};
+use anyhow::anyhow;
 
 /// Pause/resume the current track
 #[poise::command(prefix_command, slash_command, guild_only)]
-pub async fn pause(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn pause(ctx: Context<'_>) -> Result<(), AppError> {
     let guild_id = match ctx.guild().map(|guild| guild.id) {
         Some(guild_id) => guild_id,
         None => {
