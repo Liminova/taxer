@@ -11,5 +11,8 @@ RUN cargo build --release
 
 FROM alpine:latest
 
+ENV YT_DLP_PATH=/usr/local/bin/yt-dlp
+ENV FFMPEG_PATH=/usr/local/bin/ffmpeg
+
 COPY --from=builder /app/target/release/taxer /usr/local/bin/taxer
 ENTRYPOINT ["/usr/local/bin/taxer"]
