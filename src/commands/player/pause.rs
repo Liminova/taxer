@@ -1,7 +1,7 @@
-use songbird::tracks::PlayMode;
 use crate::{AppError, Context};
 
 use anyhow::anyhow;
+use songbird::tracks::PlayMode;
 
 /// Pause/resume the current track
 #[poise::command(prefix_command, slash_command, guild_only)]
