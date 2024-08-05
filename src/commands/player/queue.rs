@@ -7,7 +7,6 @@ use uuid::Uuid;
 
 /// List all tracks in the queue
 #[poise::command(prefix_command, slash_command, guild_only)]
-    // get GuildChannelID
     let guild_id = match ctx.guild().map(|guild| guild.id) {
 pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
         Some(guild_id) => guild_id,
