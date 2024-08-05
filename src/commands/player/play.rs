@@ -71,7 +71,7 @@ pub async fn play(
         }
     };
 
-    // deafen the bot, in closure avoid long-locking
+    // deafen the bot
     {
         let mut call = call.lock().await;
         if !call.is_deaf() {
