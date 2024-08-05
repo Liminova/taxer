@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use poise::serenity_prelude::GuildId;
 use uuid::Uuid;
 
 /// Stores info about formats in a track.
@@ -123,27 +124,29 @@ impl TrackInfo {
     }
 
     /// Get the output path for `yt-dlp` to download the track.
-    pub fn get_download_path(&self) -> String {
-        format!("/tmp/taxer/{}", self.id)
+    pub fn get_download_path(&self, guild_id: &GuildId) -> String {
+        format!("/tmp/taxer/{}/{}", guild_id, self.id)
     }
 
     /// Get the input path for songbird to play the track.
-    pub fn get_input_path(&self) -> Result<PathBuf, String> {
-        // list all files in /tmp/taxer
-        let files = std::fs::read_dir("/tmp/taxer")
-            .map_err(|_| "TrackInfo::to_songbird_track: failed to read /tmp/taxer")?
+    pub fn get_input_path(&self, guild_id: &GuildId) -> Result<PathBuf, String> {
+        std::fs::read_dir(format!("/tmp/taxer/{}", guild_id))
+            .map_err(|_| {
+                format!(
+                    "TrackInfo::get_input_path: can't read /tmp/taxer/{}",
+                    guild_id
+                )
+            })?
             .filter_map(|entry| entry.ok())
-            .collect::<Vec<_>>();
-
-        // find the file with the same ID
-        let file = files.into_iter().find(|file| {
-            file.file_name()
-                .to_string_lossy()
-                .contains(&self.id.to_string())
-        });
-
-        Ok(file
+            .find(|file| {
+                file.file_name()
+                    .to_string_lossy()
+                    .contains(&self.id.to_string())
+            })
             .map(|file| file.path())
-            .ok_or("TrackInfo::to_songbird_track: the track file doesn't exist")?)
+            .ok_or(format!(
+                "TrackInfo::get_input_path: the track file doesn't exist: {}",
+                self.id
+            ))
     }
 }
