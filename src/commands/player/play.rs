@@ -300,7 +300,6 @@ pub async fn play(
                 break;
             },
             Ok(err) = &mut stop_rx => {
-                error!("yt-dlp thread stopped: {}", err);
                 if let Err(e) = ctx.channel_id().send_message(
                     ctx.serenity_context().http.clone(),
                     CreateMessage::default().embed(
