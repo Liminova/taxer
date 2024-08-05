@@ -38,14 +38,14 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
         let playing_track_id: Option<Uuid> = 'scoped: {
             let songbird_manager = match songbird::get(ctx.serenity_context()).await {
                 Some(songbird_manager) => songbird_manager,
-                None => {
                     let _ = ctx.say("Can't get Songbird manager!").await;
                     return Err("commands::player::queue: songbird not loaded".into());
+                _ => {
                 }
             };
             let call = match songbird_manager.get(guild_id) {
                 Some(call) => call,
-                None => break 'scoped None,
+                _ => break 'scoped None,
             };
             let track_handle = call.lock().await.queue().current();
 
