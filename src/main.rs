@@ -84,14 +84,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                             if let Some(guild_channel) = ctx.guild_channel().await {
                                 let _ = guild_channel
-                                    .send_message(
+                                    .say(
                                         ctx.serenity_context(),
-                                        CreateMessage::default().embed(
-                                            CreateEmbed::default()
-                                                .title("Command Error")
-                                                .description(format!("`{}`", error))
-                                                .color(0xFF0000),
-                                        ),
+                                        format!("Command Error\n```\n{}\n```", error),
                                     )
                                     .await;
                             };
@@ -104,14 +99,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             if let Some(ctx) = other.ctx() {
                                 if let Some(guild_channel) = ctx.guild_channel().await {
                                     let _ = guild_channel
-                                        .send_message(
+                                        .say(
                                             ctx.serenity_context(),
-                                            CreateMessage::default().embed(
-                                                CreateEmbed::default()
-                                                    .title("Other Error")
-                                                    .description(format!("`{}`", other))
-                                                    .color(0xFF0000),
-                                            ),
+                                            format!("Other Error\n```\n{}\n```", other),
                                         )
                                         .await;
                                 };
