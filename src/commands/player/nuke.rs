@@ -81,6 +81,11 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), AppError> {
             .and_then(|track_id| track_2_channel.remove(&track_id));
     }
 
+    // clear temp dir
+    if let Err(e) = std::fs::remove_dir_all(format!("/tmp/taxer/{}", guild_id)) {
+        tracing::warn!("can't remove temp dir: {}", e);
+    }
+
     if let Err(e) = ctx.say("💥 Nuked!").await {
         tracing::warn!("can't send message 'nuked': {}", e);
     }
