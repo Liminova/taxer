@@ -52,7 +52,12 @@ pub async fn pause(ctx: Context<'_>) -> Result<(), AppError> {
                 return Ok(());
             }
         }
-        .map_err(|e| format!("commands::player::pause: can't change playing state: {}", e))?;
+        .map_err(|e| {
+            AppError::from(anyhow!(
+                "commands::player::pause: can't change playing state: {}",
+                e
+            ))
+        })?;
 
         if let Err(e) = ctx
             .say(match was_playing {
