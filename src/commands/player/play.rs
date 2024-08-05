@@ -85,7 +85,7 @@ pub async fn play(
     if let Err(e) = ctx.defer().await {
         return Err(AppError::from(anyhow!("can't send defer msg: {}", e)));
     }
-    let reply_handle: Option<ReplyHandle> = None;
+    let mut reply_handle: Option<ReplyHandle> = None;
 
     // add global event handlers once per guild
     if !player_data
@@ -256,8 +256,11 @@ pub async fn play(
                         if let Err(e) = reply_handle.edit(ctx, content).await {
                             tracing::warn!("can't edit reply: {}", e);
                         }
-                    } else if let Err(e) = ctx.send(content).await {
-                        tracing::warn!("can't send message: {}", e);
+                    } else {
+                        match ctx.send(content).await {
+                            Ok(reply_handle_) => reply_handle = Some(reply_handle_),
+                            Err(e) => tracing::warn!("can't send message: {}", e),
+                        }
                     }
 
                     { // push to global playlist
