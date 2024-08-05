@@ -1,11 +1,11 @@
-use crate::{Context, Error};
+use crate::{AppError, Context};
 
 /// get help.
 #[poise::command(prefix_command, slash_command)]
 pub async fn help(
     ctx: Context<'_>,
     #[description = "specific command to show help about"] command: Option<String>,
-) -> Result<(), Error> {
+) -> Result<(), AppError> {
     let config = poise::builtins::HelpConfiguration {
         extra_text_at_bottom: "\
 Type t!help <command> for extra help on a command.

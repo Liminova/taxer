@@ -3,11 +3,11 @@ use poise::{
     CreateReply,
 };
 
-use crate::{Context, Error};
+use crate::{AppError, Context};
 
 /// Check the App's status and latency
 #[poise::command(prefix_command, slash_command)]
-pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn ping(ctx: Context<'_>) -> Result<(), AppError> {
     let latency = ctx
         .data()
         .shard_manager
