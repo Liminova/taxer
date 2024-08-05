@@ -34,8 +34,8 @@ type Context<'a> = poise::Context<'a, Data, AppError>;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    if let Err(e) = dotenv() {
-        info!("failed to load .env file: {}", e);
+    if dotenv().is_err() {
+        info!(".env file not exists");
     }
 
     tracing_subscriber::fmt()
