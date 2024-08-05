@@ -134,7 +134,7 @@ pub async fn play(
             .arg("ytsearch")
             .arg("--skip-download")
             .arg("--print-json")
-            .arg(&url)
+            .arg(&query)
             .stdout(std::process::Stdio::piped())
             .spawn()
         {
