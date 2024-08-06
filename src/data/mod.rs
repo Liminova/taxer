@@ -11,6 +11,7 @@ pub struct Data {
     pub config: Config,
     pub player_data: Arc<PlayerData>,
     pub shard_manager: Arc<ShardManager>,
+    pub start_time: std::time::Instant,
 }
 
 impl Data {
@@ -20,6 +21,7 @@ impl Data {
             config,
             player_data: Arc::new(PlayerData::default()),
             shard_manager,
+            start_time: std::time::Instant::now(),
         }
     }
 }
