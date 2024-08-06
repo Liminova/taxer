@@ -8,6 +8,7 @@ use poise::{
 use tracing::warn;
 use uuid::Uuid;
 
+/// Skip the current track
 #[poise::command(prefix_command, slash_command, guild_only)]
 pub async fn skip(ctx: Context<'_>) -> Result<(), AppError> {
     if let Err(e) = ctx.defer().await {
