@@ -1,9 +1,6 @@
-use std::time::Duration;
-
 use crate::{AppError, Context};
 
 use anyhow::anyhow;
-use humantime::format_duration;
 use poise::{
     serenity_prelude::{CreateEmbed, CreateEmbedFooter},
     CreateReply,
@@ -26,10 +23,6 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), AppError> {
         None => "Try again later".to_string(),
     };
 
-    let uptime = format_duration(Duration::from_secs(
-        ctx.data().start_time.elapsed().as_secs(),
-    ));
-
     ctx.send(
         CreateReply::default().embed(
             CreateEmbed::new()
@@ -37,7 +30,7 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), AppError> {
                 .color(0x0a5c36)
                 .fields(vec![
                     ("Latency", latency, true),
-                    ("Uptime", uptime.to_string(), true),
+                    ("Since", format!("<t:{}:R>", ctx.data().start_time), true),
                 ])
                 .footer(CreateEmbedFooter::new(format!(
                     "Rustc version: {}",
