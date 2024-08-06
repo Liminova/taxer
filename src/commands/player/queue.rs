@@ -18,19 +18,29 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
         }
     };
 
-    let guild_channel_id = {
-        let channel_id = ctx.channel_id();
-        GuildChannelID::from((guild_id, channel_id))
-    };
-
-    // get corresponding playlist
-    let playlist = {
-        let player_data = ctx.data().player_data.clone();
-        let playlists = player_data.playlist.lock().await;
-        playlists
-            .get(&guild_channel_id)
-            .filter(|playlist| !playlist.is_empty())
-            .cloned()
+    // get playlist
+    let playlist = match ctx
+        .data()
+        .player_data
+        .playlist
+        .lock()
+        .await
+        .get(&GuildChannelID::from((guild_id, ctx.channel_id())))
+        .filter(|playlist| !playlist.is_empty())
+        .cloned()
+    {
+        Some(playlist) => playlist,
+        None => {
+            ctx.send(CreateReply::default().content("It's empty").ephemeral(true))
+                .await
+                .map_err(|e| {
+                    AppError::from(anyhow!(
+                        "commands::player::queue: can't send message: {}",
+                        e
+                    ))
+                })?;
+            return Ok(());
+        }
     };
 
     if let Some(playlist) = playlist {
