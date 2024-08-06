@@ -104,12 +104,15 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
         embed = embed.thumbnail(thumbnail);
     }
 
-    if let Err(e) = ctx
-        .send(CreateReply::default().content("It's empty").ephemeral(true))
+    // let _ = ctx.send(CreateReply::default().embed(embed)).await;
+    ctx.send(CreateReply::default().embed(embed))
         .await
-    {
-        tracing::warn!("can't send message 'queue is empty': {}", e);
-    }
+        .map_err(|e| {
+            AppError::from(anyhow!(
+                "commands::player::queue: can't send message: {}",
+                e
+            ))
+        })?;
 
     Ok(())
 }
