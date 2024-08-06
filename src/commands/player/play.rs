@@ -280,7 +280,7 @@ pub async fn play(
                         }
                     }
 
-                    { // push to global playlist
+                    { // push to guild -> tracks map
                         let mut tracks = player_data.guild_2_tracks.lock().await;
                         if let Some(tracks) = tracks.get_mut(&guild_channel_id) {
                             tracks.push_back(track_info.clone());
@@ -289,7 +289,7 @@ pub async fn play(
                         };
                     }
 
-                    // push to <track -> GuildChannelID> map
+                    // push to track -> guild map
                     player_data.track_2_guild
                         .lock()
                         .await
