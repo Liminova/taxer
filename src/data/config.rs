@@ -5,6 +5,7 @@ pub struct Config {
     pub ffmpeg_path: String,
 
     pub discord_token: String,
+    pub bot_maintainer_uid: String,
 }
 
 impl Config {
@@ -42,6 +43,14 @@ impl Config {
                 let path = Self::get_env("DISCORD_TOKEN");
                 if path.is_empty() {
                     tracing::error!("DISCORD_TOKEN is empty");
+                    std::process::exit(1);
+                }
+                path
+            },
+            bot_maintainer_uid: {
+                let path = Self::get_env("BOT_MAINTAINER_UID");
+                if path.is_empty() {
+                    tracing::error!("BOT_MAINTAINER_UID is empty");
                     std::process::exit(1);
                 }
                 path

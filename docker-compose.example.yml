@@ -12,3 +12,4 @@ services:
             - <FFMPEG-PATH>:/usr/local/bin/ffmpeg
         environment:
             DISCORD_TOKEN:
+            BOT_MAINTAINER_UID:
