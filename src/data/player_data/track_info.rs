@@ -79,6 +79,25 @@ impl TrackInfo {
         self.title.clone()
     }
 
+    /// Get description for Discord embed.
+    pub fn get_pretty_description(&self) -> String {
+        let author = self
+            .artist
+            .clone()
+            .or_else(|| self.uploader.clone())
+            .unwrap_or("Unknown".to_string());
+
+        let duration = {
+            let duration_in_sec = self.duration_in_sec;
+            let hours = duration_in_sec / 3600;
+            let minutes = (duration_in_sec % 3600) / 60;
+            let seconds = duration_in_sec % 60;
+            format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
+        };
+
+        format!("{} | {}", author, duration)
+    }
+
     /// Get playable direct URL of the track from Vec<Format>.
     /// If the track is not available in any of the formats, return `None`.
     pub fn get_playable_url(&self) -> Option<String> {
