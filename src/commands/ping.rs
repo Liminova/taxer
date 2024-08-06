@@ -30,7 +30,7 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), AppError> {
                 .color(0x0a5c36)
                 .fields(vec![
                     ("Latency", latency, true),
-                    ("Since", format!("<t:{}:R>", ctx.data().start_time), true),
+                    ("Uptime", format!("<t:{}:R>", ctx.data().start_time), true),
                 ])
                 .footer(CreateEmbedFooter::new(format!(
                     "Rustc version: {}",
