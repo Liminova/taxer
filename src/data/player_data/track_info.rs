@@ -13,7 +13,8 @@ pub struct Format {
     pub bitrate: Option<f32>,
 }
 
-/// Stores info about a track.
+/// Stores info about a track. This one exists because songbird's queue only
+/// stores track IDs and not allowed adding additional info to the queue.
 #[derive(Debug, serde::Deserialize, Clone)]
 pub struct TrackInfo {
     // Functional fields
