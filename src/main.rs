@@ -62,6 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 commands::player::play(),
                 commands::player::pause(),
                 commands::player::queue(),
+                commands::player::restart(),
                 commands::player::skip(),
                 commands::player::nuke(),
             ],
