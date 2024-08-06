@@ -89,6 +89,7 @@ pub async fn play(
         return Err(AppError::from(anyhow!("can't send defer msg: {}", e)));
     }
     let mut reply_handle: Option<ReplyHandle> = None;
+    let mut warned_cant_download = false;
 
     // add global event handlers once per guild
     if !player_data
@@ -210,11 +211,17 @@ pub async fn play(
                         let client = ctx.data().player_data.http_client.clone();
                         Some(Track::new_with_uuid(HttpRequest::new(client, direct_url).into(), track_info.id))
                     } else { // else download the track w/ ffmpeg to convert to aac
-                        if let Err(e) = ctx.say(format!("Can't get a playable URL, downloading the track...\n\
-                            <@{}> You might want to update `yt-dlp` to the latest version.",
-                            ctx.data().config.bot_maintainer_uid)).await {
-                                tracing::warn!("can't send message 'you might want to update yt-dlp': {}", e);
-                            };
+                        if !warned_cant_download {
+                            warned_cant_download = true;
+                            if let Err(e) = ctx.channel_id().say(
+                                ctx.serenity_context().http.clone(),
+                                format!(
+                                    "Can't get a playable URL, downloading the track...\n\
+                                    <@{}> You might want to update `yt-dlp` to the latest version.",
+                                    ctx.data().config.bot_maintainer_uid
+                                ),
+                            ).await { tracing::warn!("can't send message: {}", e); }
+                        }
 
                         let proc = std::process::Command::new(ctx.data().config.yt_dlp_path.clone())
                             .arg("--ffmpeg-location")
