@@ -37,21 +37,23 @@ pub async fn play(
             return Ok(());
         }
     };
-    let voice_channel_id = match ctx.guild().and_then(|guild| {
-        guild
-            .voice_states
-            .get(&ctx.author().id)
-            .and_then(|voice_state| voice_state.channel_id)
-    }) {
-        Some(voice_channel_id) => voice_channel_id,
-        None => {
-            let _ = ctx.say("You're not in a voice channel!").await;
-            return Ok(());
-        }
-    };
+
     let guild_channel_id = GuildChannelID::from((guild_id, ctx.channel_id()));
 
     let call = {
+        let voice_channel_id = match ctx.guild().and_then(|guild| {
+            guild
+                .voice_states
+                .get(&ctx.author().id)
+                .and_then(|voice_state| voice_state.channel_id)
+        }) {
+            Some(voice_channel_id) => voice_channel_id,
+            None => {
+                let _ = ctx.say("You're not in a voice channel!").await;
+                return Ok(());
+            }
+        };
+
         let songbird_manager = match songbird::get(ctx.serenity_context()).await {
             Some(songbird_manager) => songbird_manager,
             None => {
