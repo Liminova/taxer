@@ -61,6 +61,7 @@ pub async fn play(
                 return Ok(());
             }
         };
+
         match songbird_manager.get(guild_id) {
             Some(call) => call,
             None => match songbird_manager.join(guild_id, voice_channel_id).await {
@@ -111,6 +112,7 @@ pub async fn play(
                 player_data: ctx.data().player_data.clone(),
             },
         );
+        // mark the guild as already-added-event-handler
         player_data
             .call_global_event_handler_added
             .lock()
