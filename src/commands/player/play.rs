@@ -314,7 +314,9 @@ pub async fn play(
                     if let Err(e) = reply_handle.edit(ctx, CreateReply::default().content(content)).await {
                         tracing::warn!("can't edit reply: {}", e);
                     }
-                }
+                } else if let Err(e) = ctx.say(content).await {
+                    tracing::warn!("can't send message: {}", e);
+                };
 
                 break;
             },
