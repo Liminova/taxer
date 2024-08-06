@@ -274,16 +274,16 @@ pub async fn play(
                     }
 
                     { // push to global playlist
-                        let mut playlist = player_data.playlist.lock().await;
-                        if let Some(playlist) = playlist.get_mut(&guild_channel_id) {
-                            playlist.push_back(track_info.clone());
+                        let mut tracks = player_data.guild_2_tracks.lock().await;
+                        if let Some(tracks) = tracks.get_mut(&guild_channel_id) {
+                            tracks.push_back(track_info.clone());
                         } else {
-                            playlist.insert(guild_channel_id.clone(), VecDeque::from([track_info.clone()]));
+                            tracks.insert(guild_channel_id.clone(), VecDeque::from([track_info.clone()]));
                         };
                     }
 
                     // push to <track -> GuildChannelID> map
-                    player_data.track_2_channel
+                    player_data.track_2_guild
                         .lock()
                         .await
                         .insert(track_info.id, guild_channel_id.clone());

@@ -4,10 +4,9 @@ pub mod player_data;
 use config::Config;
 use player_data::PlayerData;
 
-use poise::serenity_prelude::ShardManager;
-
 use std::sync::Arc;
 
+use poise::serenity_prelude::ShardManager;
 pub struct Data {
     pub config: Config,
     pub player_data: Arc<PlayerData>,

@@ -66,15 +66,15 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), AppError> {
         .data()
         .player_data
         .clone()
-        .playlist
+        .guild_2_tracks
         .lock()
         .await
         .get_mut(&guild_channel_id)
-        .and_then(|playlist| {
-            if playlist.len() >= 2 {
-                next_track_id = Some(playlist[1].id);
+        .and_then(|tracks| {
+            if tracks.len() >= 2 {
+                next_track_id = Some(tracks[1].id);
             }
-            playlist.pop_front()
+            tracks.pop_front()
         });
     let just_skipped_track = match just_skipped_track {
         Some(track_info) => track_info,
@@ -86,14 +86,12 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), AppError> {
         }
     };
 
-    // rm old track ID -> GuildChannelID mapping
+    // replace track in track_2_guild mapping
     let player_data = ctx.data().player_data.clone();
-    let mut track_2_channel = player_data.track_2_channel.lock().await;
-    track_2_channel.remove(&just_skipped_track.id);
-
-    // add new track ID -> GuildChannelID mapping
+    let mut track_2_guild = player_data.track_2_guild.lock().await;
+    track_2_guild.remove(&just_skipped_track.id);
     if let Some(next_track_id) = next_track_id {
-        track_2_channel.insert(next_track_id, guild_channel_id);
+        track_2_guild.insert(next_track_id, guild_channel_id);
     }
 
     let mut embed = CreateEmbed::default()

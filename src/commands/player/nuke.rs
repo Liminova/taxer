@@ -22,7 +22,7 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), AppError> {
     };
     let guild_channel_id = GuildChannelID::from((guild_id, ctx.channel_id()));
 
-    // send nuke signal to /play commands
+    // send nuke signal to any running /play command
     let _ = ctx
         .data()
         .player_data
@@ -48,7 +48,7 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), AppError> {
         }
     };
 
-    // stop the call and clear the queue
+    // stop the call and clear songbird's queue
     call.lock().await.stop();
     if let Err(e) = songbird_manager.remove(guild_id).await {
         tracing::warn!("can't disconnect from voice channel: {}", e);
@@ -64,22 +64,19 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), AppError> {
         }
     }
 
-    // clear playlist
-    player_data.playlist.lock().await.remove(&guild_channel_id);
+    // clear guild_2_tracks
+    player_data
+        .guild_2_tracks
+        .lock()
+        .await
+        .remove(&guild_channel_id);
 
-    // clear track -> GuildChannelID map
-    {
-        let mut track_2_channel = player_data.track_2_channel.lock().await;
-        track_2_channel
-            .iter()
-            .find_map(|(track_id, guild_channel_id_in_map)| {
-                match guild_channel_id_in_map == &guild_channel_id {
-                    true => Some(*track_id),
-                    false => None,
-                }
-            })
-            .and_then(|track_id| track_2_channel.remove(&track_id));
-    }
+    // clear track_to_guild mapping
+    player_data
+        .track_2_guild
+        .lock()
+        .await
+        .retain(|_, guild_channel_id_in_map| guild_channel_id_in_map != &guild_channel_id);
 
     // clear temp dir
     if let Err(e) = std::fs::remove_dir_all(format!("/tmp/taxer/{}", guild_id)) {

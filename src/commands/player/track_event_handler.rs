@@ -32,7 +32,7 @@ impl songbird::EventHandler for PlayEventHandler {
         // get where the track playing from
         let player_data = self.player_data.clone();
         let guild_channel_id = player_data
-            .track_2_channel
+            .track_2_guild
             .lock()
             .await
             .get(&track_id)?
@@ -47,12 +47,12 @@ impl songbird::EventHandler for PlayEventHandler {
 
         // get current playing track info, if any
         let track_info = match player_data
-            .playlist
+            .guild_2_tracks
             .lock()
             .await
             .get(&guild_channel_id)
-            .and_then(|playlist| {
-                playlist
+            .and_then(|tracks| {
+                tracks
                     .iter()
                     .find(|track_info| track_info.id == track_id)
                     .cloned()
@@ -123,20 +123,23 @@ impl songbird::EventHandler for EndEventHandler {
         // get where the track ended from
         let player_data = self.player_data.clone();
         let guild_channel_id = player_data
-            .track_2_channel
+            .track_2_guild
             .lock()
             .await
             .get(&track_id)?
             .clone();
 
         // cleanup
-        let mut playlists = player_data.playlist.lock().await;
-        if let Some(playlist) = playlists.get_mut(&guild_channel_id) {
-            playlist.retain(|track_info| track_info.id != track_id);
-            if playlist.is_empty() {
-                playlists.remove(&guild_channel_id);
-            }
+        let mut guild_2_tracks = player_data.guild_2_tracks.lock().await;
+        if let Some(tracks) = guild_2_tracks.get_mut(&guild_channel_id) {
+            match tracks.len() {
+                0 | 1 => {
+                    guild_2_tracks.remove(&guild_channel_id);
+                }
+                _ => tracks.retain(|track_info| track_info.id != track_id),
+            };
         };
+        player_data.track_2_guild.lock().await.remove(&track_id);
 
         None
     }

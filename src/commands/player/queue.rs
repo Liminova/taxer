@@ -17,31 +17,18 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
             return Ok(());
         }
     };
+    let guild_channel_id = GuildChannelID::from((guild_id, ctx.channel_id()));
 
-    // get playlist
-    let playlist = match ctx
+    let tracks = ctx
         .data()
         .player_data
-        .playlist
+        .clone()
+        .guild_2_tracks
         .lock()
         .await
-        .get(&GuildChannelID::from((guild_id, ctx.channel_id())))
-        .filter(|playlist| !playlist.is_empty())
+        .get(&guild_channel_id)
         .cloned()
-    {
-        Some(playlist) => playlist,
-        None => {
-            ctx.send(CreateReply::default().content("It's empty").ephemeral(true))
-                .await
-                .map_err(|e| {
-                    AppError::from(anyhow!(
-                        "commands::player::queue: can't send message: {}",
-                        e
-                    ))
-                })?;
-            return Ok(());
-        }
-    };
+        .unwrap_or_default();
 
     // get playing track id
     let playing_track_id: Option<Uuid> = 'scoped: {
@@ -72,47 +59,46 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
         None
     };
 
-    // create the embed
-    let mut thumbnail = None;
-    let mut embed = CreateEmbed::default().title("Queue").fields(
-        playlist
-            .iter()
-            .map(|track_info| {
-                (
-                    format!(
-                        "{}{}",
-                        match track_info.id == playing_track_id.unwrap_or_default() {
-                            true => {
-                                thumbnail.clone_from(&track_info.thumbnail);
-                                "▶️  "
-                            }
-                            false => "",
-                        },
-                        track_info.get_title()
-                    ),
-                    format!(
-                        "{} | [Source]({})",
-                        track_info.get_pretty_description(),
-                        track_info.url
-                    ),
-                    false,
-                )
-            })
-            .collect::<Vec<_>>(),
-    );
-    if let Some(thumbnail) = thumbnail {
-        embed = embed.thumbnail(thumbnail);
-    }
-
-    // let _ = ctx.send(CreateReply::default().embed(embed)).await;
-    ctx.send(CreateReply::default().embed(embed))
-        .await
-        .map_err(|e| {
-            AppError::from(anyhow!(
-                "commands::player::queue: can't send message: {}",
-                e
-            ))
-        })?;
+    ctx.send(CreateReply::default().embed({
+        let mut thumbnail = None;
+        let mut embed = CreateEmbed::default().title("Queue").fields(
+            tracks
+                .iter()
+                .map(|track_info| {
+                    (
+                        format!(
+                            "{}{}",
+                            match track_info.id == playing_track_id.unwrap_or_default() {
+                                true => {
+                                    thumbnail.clone_from(&track_info.thumbnail);
+                                    "▶️  "
+                                }
+                                false => "",
+                            },
+                            track_info.get_title()
+                        ),
+                        format!(
+                            "{} | [Source]({})",
+                            track_info.get_pretty_description(),
+                            track_info.url
+                        ),
+                        false,
+                    )
+                })
+                .collect::<Vec<_>>(),
+        );
+        if let Some(thumbnail) = thumbnail {
+            embed = embed.thumbnail(thumbnail);
+        };
+        embed
+    }))
+    .await
+    .map_err(|e| {
+        AppError::from(anyhow!(
+            "commands::player::queue: can't send message: {}",
+            e
+        ))
+    })?;
 
     Ok(())
 }

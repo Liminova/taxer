@@ -18,12 +18,12 @@ pub struct PlayerData {
 
     /// Mapping track's id to GuildChannelID since it's the only thing
     /// songbird's context provides inside the EventHandler trait.
-    pub track_2_channel: Mutex<HashMap<Uuid, GuildChannelID>>,
+    pub track_2_guild: Mutex<HashMap<Uuid, GuildChannelID>>,
 
     /// The playlist for each Guild, this is just for displaying the
     /// playlist in the message. We'll be using the songbird's queue
     /// for actually queueing the tracks.
-    pub playlist: Mutex<HashMap<GuildChannelID, VecDeque<TrackInfo>>>,
+    pub guild_2_tracks: Mutex<HashMap<GuildChannelID, VecDeque<TrackInfo>>>,
 
     /// The reqwest client used for downloading the track
     /// when yt-dlp being able to use playable direct url.
@@ -38,8 +38,8 @@ impl Default for PlayerData {
     fn default() -> Self {
         Self {
             call_global_event_handler_added: Mutex::new(HashSet::new()),
-            track_2_channel: Mutex::new(HashMap::new()),
-            playlist: Mutex::new(HashMap::new()),
+            track_2_guild: Mutex::new(HashMap::new()),
+            guild_2_tracks: Mutex::new(HashMap::new()),
             http_client: reqwest::Client::new(),
             nuke_signal: broadcast::channel::<GuildChannelID>(1).0,
         }
