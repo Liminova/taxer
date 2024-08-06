@@ -37,62 +37,61 @@ impl songbird::EventHandler for PlayEventHandler {
             .await
             .get(&track_id)?
             .clone();
-        let (guild_id, channel_id) = (&guild_channel_id).into();
 
-        let guild_channel = guild_id
-            .to_guild_cached(&self.cache.clone())
-            .and_then(|guild| guild.channels.get(channel_id).cloned())?;
-
-        // get current playing track info
-        let track_info = 'scoped: {
-            let playlist = player_data
-                .playlist
-                .lock()
-                .await
-                .get(&guild_channel_id)
-                .and_then(|playlist| playlist.iter().cloned().collect::<Vec<_>>().into());
-            if let Some(playlist) = playlist {
-                break 'scoped playlist
-                    .into_iter()
-                    .find(|track_info| track_info.id == track_id);
-            }
-            None
+        let guild_channel = {
+            let (guild_id, channel_id) = (&guild_channel_id).into();
+            guild_id
+                .to_guild_cached(&self.cache.clone())
+                .and_then(|guild| guild.channels.get(channel_id).cloned())?
         };
 
-        // send current playing track msg
-        if let Some(track_info) = track_info {
-            let description = {
-                let author = track_info
-                    .artist
-                    .clone()
-                    .or_else(|| track_info.uploader.clone())
-                    .unwrap_or("Unknown".to_string());
-
-                let duration = {
-                    let duration_in_sec = track_info.duration_in_sec;
-                    let hours = duration_in_sec / 3600;
-                    let minutes = (duration_in_sec % 3600) / 60;
-                    let seconds = duration_in_sec % 60;
-                    format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
-                };
-
-                format!("{} | {}", author, duration)
-            };
-
-            let mut embed = CreateEmbed::default()
-                .author(CreateEmbedAuthor::new("Now playing"))
-                .title(track_info.get_title())
-                .description(description)
-                .url(&track_info.url);
-
-            if let Some(thumbnail) = track_info.thumbnail.clone() {
-                embed = embed.thumbnail(thumbnail);
+        // get current playing track info, if any
+        let track_info = match player_data
+            .playlist
+            .lock()
+            .await
+            .get(&guild_channel_id)
+            .and_then(|playlist| {
+                playlist
+                    .iter()
+                    .find(|track_info| track_info.id == track_id)
+                    .cloned()
+            }) {
+            Some(track_info) => track_info,
+            None => {
+                if let Err(e) = guild_channel
+                    .send_message(
+                        self.http.clone(),
+                        CreateMessage::default().content("There's no track in the queue!"),
+                    )
+                    .await
+                {
+                    tracing::warn!("can't send message 'no track in queue': {}", e);
+                }
+                return None;
             }
+        };
 
-            guild_channel
-                .send_message(self.http.clone(), CreateMessage::default().embed(embed))
-                .await
-                .ok()?;
+        // send msg to channel
+        if let Err(e) = guild_channel
+            .send_message(
+                self.http.clone(),
+                CreateMessage::default().embed({
+                    let mut embed = CreateEmbed::default()
+                        .author(CreateEmbedAuthor::new("Now playing"))
+                        .title(track_info.get_title())
+                        .description(track_info.get_pretty_description())
+                        .url(&track_info.url);
+
+                    if let Some(thumbnail) = track_info.thumbnail.clone() {
+                        embed = embed.thumbnail(thumbnail);
+                    }
+                    embed
+                }),
+            )
+            .await
+        {
+            tracing::warn!("can't send message 'now playing': {}", e);
         };
 
         None
