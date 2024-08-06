@@ -1,14 +1,18 @@
+use std::time::Duration;
+
+use crate::{AppError, Context};
+
+use anyhow::anyhow;
+use humantime::format_duration;
 use poise::{
     serenity_prelude::{CreateEmbed, CreateEmbedFooter},
     CreateReply,
 };
 
-use crate::{AppError, Context};
-
 /// Check the App's status and latency
 #[poise::command(prefix_command, slash_command)]
 pub async fn ping(ctx: Context<'_>) -> Result<(), AppError> {
-    let latency = ctx
+    let latency = match ctx
         .data()
         .shard_manager
         .clone()
@@ -16,41 +20,33 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), AppError> {
         .lock()
         .await
         .get(&ctx.serenity_context().shard_id)
-        .and_then(|runner| runner.latency);
+        .and_then(|runner| runner.latency)
+    {
+        Some(latency) => format!("Latency: {}ms", latency.as_millis()),
+        None => "Try again later".to_string(),
+    };
 
-    if let Some(latency) = latency {
-        let _ = ctx
-            .send(
-                CreateReply::default().embed(
-                    CreateEmbed::new()
-                        .title("Pong!")
-                        .description(format!("Latency: {}ms", latency.as_millis()))
-                        .color(0x00ff00)
-                        .footer(CreateEmbedFooter::new(format!(
-                            "Rustc version: {}",
-                            rustc_version_runtime::version()
-                        ))),
-                ),
-            )
-            .await;
+    let uptime = format_duration(Duration::from_secs(
+        ctx.data().start_time.elapsed().as_secs(),
+    ));
 
-        return Ok(());
-    }
-
-    let _ = ctx
-        .send(
-            CreateReply::default().embed(
-                CreateEmbed::new()
-                    .title("Pong!")
-                    .description("Try again later")
-                    .color(0xff3300)
-                    .footer(CreateEmbedFooter::new(format!(
-                        "Rustc version: {}",
-                        rustc_version_runtime::version()
-                    ))),
-            ),
-        )
-        .await;
+    ctx.send(
+        CreateReply::default().embed(
+            CreateEmbed::new()
+                .title("Pong!")
+                .color(0x0a5c36)
+                .fields(vec![
+                    ("Latency", latency, true),
+                    ("Uptime", uptime.to_string(), true),
+                ])
+                .footer(CreateEmbedFooter::new(format!(
+                    "Rustc version: {}",
+                    rustc_version_runtime::version()
+                ))),
+        ),
+    )
+    .await
+    .map_err(|e| AppError::from(anyhow!("can't send message: {}", e)))?;
 
     Ok(())
 }
