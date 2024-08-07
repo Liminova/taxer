@@ -59,6 +59,13 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
         None
     };
 
+    if tracks.is_empty() {
+        if let Err(e) = ctx.say("It's empty!").await {
+            tracing::warn!("can't send message 'queue is empty': {}", e);
+        }
+        return Ok(());
+    }
+
     ctx.send(CreateReply::default().embed({
         let mut thumbnail = None;
         let mut embed = CreateEmbed::default().title("Queue").fields(
