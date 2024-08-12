@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use poise::serenity_prelude::GuildId;
+use poise::serenity_prelude::{ChannelId, GuildId};
 use uuid::Uuid;
 
 /// Stores info about formats in a track.
@@ -31,6 +31,9 @@ pub struct TrackInfo {
     pub thumbnail: Option<String>,
     pub artist: Option<String>,
     pub uploader: Option<String>,
+
+    /// Where the app was called from to send "Now playing" message.
+    pub text_channel_id: Option<ChannelId>,
 }
 
 impl Default for TrackInfo {
@@ -45,6 +48,8 @@ impl Default for TrackInfo {
             thumbnail: None,
             artist: None,
             uploader: None,
+
+            text_channel_id: None,
         }
     }
 }

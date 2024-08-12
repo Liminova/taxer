@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use poise::serenity_prelude::{
-    async_trait, Cache, CreateEmbed, CreateEmbedAuthor, CreateMessage, Http,
+    async_trait, ChannelId, CreateEmbed, CreateEmbedAuthor, CreateMessage, Http,
 };
 use songbird::tracks::PlayMode;
+use tracing::warn;
 
 use crate::data::player_data::PlayerData;
 
@@ -11,7 +12,6 @@ use crate::data::player_data::PlayerData;
 pub struct PlayEventHandler {
     pub player_data: Arc<PlayerData>,
     pub http: Arc<Http>,
-    pub cache: Arc<Cache>,
 }
 
 #[async_trait]
@@ -29,28 +29,29 @@ impl songbird::EventHandler for PlayEventHandler {
             track_handle.uuid()
         };
 
-        // get where the track playing from
-        let player_data = self.player_data.clone();
-        let guild_channel_id = player_data
+        // track ID -> guild ID
+        let guild_id = match self
+            .player_data
             .track_2_guild
             .lock()
             .await
-            .get(&track_id)?
-            .clone();
-
-        let guild_channel = {
-            let (guild_id, channel_id) = (&guild_channel_id).into();
-            guild_id
-                .to_guild_cached(&self.cache.clone())
-                .and_then(|guild| guild.channels.get(channel_id).cloned())?
+            .get(&track_id)
+            .cloned()
+        {
+            Some(guild_id) => guild_id,
+            None => {
+                warn!("track_2_guild doesn't contain track_id");
+                return None;
+            }
         };
 
-        // get current playing track info, if any
-        let track_info = match player_data
+        // guild ID -> tracks[track ID] -> track info
+        let track_info = match self
+            .player_data
             .guild_2_tracks
             .lock()
             .await
-            .get(&guild_channel_id)
+            .get(&guild_id)
             .and_then(|tracks| {
                 tracks
                     .iter()
@@ -59,21 +60,21 @@ impl songbird::EventHandler for PlayEventHandler {
             }) {
             Some(track_info) => track_info,
             None => {
-                if let Err(e) = guild_channel
-                    .send_message(
-                        self.http.clone(),
-                        CreateMessage::default().content("There's no track in the queue!"),
-                    )
-                    .await
-                {
-                    tracing::warn!("can't send message 'no track in queue': {}", e);
-                }
+                warn!("guild_2_tracks doesn't contain guild_id to get track_info");
+                return None;
+            }
+        };
+
+        let channel_id: ChannelId = match track_info.text_channel_id {
+            Some(channel_id) => channel_id,
+            None => {
+                warn!("track_info.text_channel_id is None");
                 return None;
             }
         };
 
         // send msg to channel
-        if let Err(e) = guild_channel
+        if let Err(e) = channel_id
             .send_message(
                 self.http.clone(),
                 CreateMessage::default().embed({
@@ -121,25 +122,23 @@ impl songbird::EventHandler for EndEventHandler {
         };
 
         // get where the track ended from
-        let player_data = self.player_data.clone();
-        let guild_channel_id = player_data
-            .track_2_guild
-            .lock()
-            .await
-            .get(&track_id)?
-            .clone();
+        let guild_id = *self.player_data.track_2_guild.lock().await.get(&track_id)?;
 
         // cleanup
-        let mut guild_2_tracks = player_data.guild_2_tracks.lock().await;
-        if let Some(tracks) = guild_2_tracks.get_mut(&guild_channel_id) {
+        let mut guild_2_tracks = self.player_data.guild_2_tracks.lock().await;
+        if let Some(tracks) = guild_2_tracks.get_mut(&guild_id) {
             match tracks.len() {
                 0 | 1 => {
-                    guild_2_tracks.remove(&guild_channel_id);
+                    guild_2_tracks.remove(&guild_id);
                 }
                 _ => tracks.retain(|track_info| track_info.id != track_id),
             };
         };
-        player_data.track_2_guild.lock().await.remove(&track_id);
+        self.player_data
+            .track_2_guild
+            .lock()
+            .await
+            .remove(&track_id);
 
         None
     }

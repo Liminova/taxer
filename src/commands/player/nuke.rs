@@ -1,4 +1,4 @@
-use crate::{data::player_data::GuildChannelID, AppError, Context};
+use crate::{AppError, Context};
 
 use anyhow::anyhow;
 
@@ -10,7 +10,7 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), AppError> {
     }
 
     // cloning and creating necessary identifiers
-    let player_data = ctx.data().player_data.clone();
+    // let player_data = ctx.data().player_data.clone();
     let guild_id = match ctx.guild().map(|guild| guild.id) {
         Some(guild_id) => guild_id,
         None => {
@@ -20,14 +20,9 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), AppError> {
             return Ok(());
         }
     };
-    let guild_channel_id = GuildChannelID::from((guild_id, ctx.channel_id()));
 
     // send nuke signal to any running /play command
-    let _ = ctx
-        .data()
-        .player_data
-        .nuke_signal
-        .send(guild_channel_id.clone());
+    let _ = ctx.data().player_data.nuke_signal.send(guild_id);
 
     let songbird_manager = match songbird::get(ctx.serenity_context()).await {
         Some(songbird_manager) => songbird_manager,
@@ -56,27 +51,33 @@ pub async fn nuke(ctx: Context<'_>) -> Result<(), AppError> {
 
     // clear global event handlers
     {
-        let mut call_global_event_handler_added =
-            player_data.call_global_event_handler_added.lock().await;
-        if call_global_event_handler_added.contains(&guild_channel_id) {
+        let mut call_global_event_handler_added = ctx
+            .data()
+            .player_data
+            .call_global_event_handler_added
+            .lock()
+            .await;
+        if call_global_event_handler_added.contains(&guild_id) {
             call.lock().await.remove_all_global_events();
-            call_global_event_handler_added.remove(&guild_channel_id);
+            call_global_event_handler_added.remove(&guild_id);
         }
     }
 
     // clear guild_2_tracks
-    player_data
+    ctx.data()
+        .player_data
         .guild_2_tracks
         .lock()
         .await
-        .remove(&guild_channel_id);
+        .remove(&guild_id);
 
-    // clear track_to_guild mapping
-    player_data
+    // clear track_2_guild
+    ctx.data()
+        .player_data
         .track_2_guild
         .lock()
         .await
-        .retain(|_, guild_channel_id_in_map| guild_channel_id_in_map != &guild_channel_id);
+        .retain(|_, guild_id_in_map| guild_id_in_map != &guild_id);
 
     // clear temp dir
     if let Err(e) = std::fs::remove_dir_all(format!("/tmp/taxer/{}", guild_id)) {

@@ -1,4 +1,4 @@
-use crate::{data::player_data::GuildChannelID, AppError, Context};
+use crate::{AppError, Context};
 
 use anyhow::anyhow;
 use poise::{
@@ -61,16 +61,14 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), AppError> {
     }
 
     // check our own playlist queue
-    let guild_channel_id = GuildChannelID::from((guild_id, ctx.channel_id()));
     let mut next_track_id: Option<Uuid> = None;
     let just_skipped_track = ctx
         .data()
         .player_data
-        .clone()
         .guild_2_tracks
         .lock()
         .await
-        .get_mut(&guild_channel_id)
+        .get_mut(&guild_id)
         .and_then(|tracks| {
             if tracks.len() >= 2 {
                 next_track_id = Some(tracks[1].id);
@@ -92,7 +90,7 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), AppError> {
     let mut track_2_guild = player_data.track_2_guild.lock().await;
     track_2_guild.remove(&just_skipped_track.id);
     if let Some(next_track_id) = next_track_id {
-        track_2_guild.insert(next_track_id, guild_channel_id);
+        track_2_guild.insert(next_track_id, guild_id);
     }
 
     let mut embed = CreateEmbed::default()

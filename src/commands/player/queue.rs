@@ -1,4 +1,4 @@
-use crate::{data::player_data::GuildChannelID, AppError, Context};
+use crate::{AppError, Context};
 
 use anyhow::anyhow;
 use poise::{serenity_prelude::CreateEmbed, CreateReply};
@@ -17,7 +17,6 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
             return Ok(());
         }
     };
-    let guild_channel_id = GuildChannelID::from((guild_id, ctx.channel_id()));
 
     let tracks = ctx
         .data()
@@ -26,7 +25,7 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), AppError> {
         .guild_2_tracks
         .lock()
         .await
-        .get(&guild_channel_id)
+        .get(&guild_id)
         .cloned()
         .unwrap_or_default();
 

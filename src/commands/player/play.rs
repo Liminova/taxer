@@ -1,7 +1,4 @@
-use crate::{
-    data::player_data::{GuildChannelID, TrackInfo},
-    AppError, Context,
-};
+use crate::{data::player_data::TrackInfo, AppError, Context};
 
 use std::{collections::VecDeque, io::BufRead, process::Command};
 
@@ -27,7 +24,6 @@ pub async fn play(
     }
     let player_data = ctx.data().player_data.clone();
 
-    // get guild/voice/text channel IDs
     let guild_id = match ctx.guild_id() {
         Some(guild_id) => guild_id,
         None => {
@@ -37,8 +33,6 @@ pub async fn play(
             return Ok(());
         }
     };
-
-    let guild_channel_id = GuildChannelID::from((guild_id, ctx.channel_id()));
 
     let call = {
         let voice_channel_id = match ctx.guild().and_then(|guild| {
@@ -96,7 +90,7 @@ pub async fn play(
         .call_global_event_handler_added
         .lock()
         .await
-        .contains(&guild_channel_id)
+        .contains(&guild_id)
     {
         let mut call = call.lock().await;
         call.add_global_event(
@@ -104,7 +98,6 @@ pub async fn play(
             super::track_event_handler::PlayEventHandler {
                 player_data: ctx.data().player_data.clone(),
                 http: ctx.serenity_context().http.clone(),
-                cache: ctx.serenity_context().cache.clone(),
             },
         );
         call.add_global_event(
@@ -118,7 +111,7 @@ pub async fn play(
             .call_global_event_handler_added
             .lock()
             .await
-            .insert(guild_channel_id.clone());
+            .insert(guild_id);
     };
 
     // create channels for sending track info between threads
@@ -130,6 +123,7 @@ pub async fn play(
 
     // spawn yt-dlp thread, push data through channel
     let yt_dlp_path = ctx.data().config.yt_dlp_path.clone();
+    let text_channel_id = ctx.channel_id();
     let yt_dlp_thread_handle = tokio::spawn(async move {
         // create yt-dlp process
         let mut yt_dlp_process = match Command::new(yt_dlp_path)
@@ -161,7 +155,7 @@ pub async fn play(
                     }
                 };
 
-                // parse & assign ID
+                // parse, assign ID and text channel ID
                 let mut track_info: TrackInfo = match serde_json::from_str(line.as_str()) {
                     Ok(track_info) => track_info,
                     Err(e) => {
@@ -170,6 +164,7 @@ pub async fn play(
                     }
                 };
                 track_info.id = Uuid::new_v4();
+                track_info.text_channel_id = Some(text_channel_id);
 
                 // send new track info
                 if let Err(e) = track_info_tx.send(Some(track_info)).await {
@@ -282,10 +277,10 @@ pub async fn play(
 
                     { // push to guild -> tracks map
                         let mut tracks = player_data.guild_2_tracks.lock().await;
-                        if let Some(tracks) = tracks.get_mut(&guild_channel_id) {
+                        if let Some(tracks) = tracks.get_mut(&guild_id) {
                             tracks.push_back(track_info.clone());
                         } else {
-                            tracks.insert(guild_channel_id.clone(), VecDeque::from([track_info.clone()]));
+                            tracks.insert(guild_id, VecDeque::from([track_info.clone()]));
                         };
                     }
 
@@ -293,7 +288,7 @@ pub async fn play(
                     player_data.track_2_guild
                         .lock()
                         .await
-                        .insert(track_info.id, guild_channel_id.clone());
+                        .insert(track_info.id, guild_id);
 
                     { // add track to the queue
                         let mut call = call.lock().await;
@@ -334,9 +329,9 @@ pub async fn play(
                 }
                 break;
             },
-            target_guild_channel_id = nuke_signal.recv() => {
-                if let Ok(target_guild_channel_id) = target_guild_channel_id {
-                    if target_guild_channel_id == guild_channel_id {
+            target_guild_id = nuke_signal.recv() => {
+                if let Ok(target_guild_id) = target_guild_id {
+                    if target_guild_id == guild_id {
                         yt_dlp_thread_handle.abort();
                         break;
                     }

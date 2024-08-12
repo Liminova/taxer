@@ -1,11 +1,10 @@
-mod guild_channel_id;
 mod track_info;
 
-pub use guild_channel_id::GuildChannelID;
 pub use track_info::TrackInfo;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 
+use poise::serenity_prelude::GuildId;
 use tokio::sync::{broadcast, Mutex};
 use uuid::Uuid;
 
@@ -14,16 +13,15 @@ pub struct PlayerData {
     /// A "flag" to indicate if the track end global event handler has been
     /// added for any given guild-channel, so that users can execute the play
     /// command multiple times without creating duplicate event handlers.
-    pub call_global_event_handler_added: Mutex<HashSet<GuildChannelID>>,
+    pub call_global_event_handler_added: Mutex<HashSet<GuildId>>,
 
-    /// Mapping track's id to GuildChannelID since it's the only thing
+    /// Mapping track ID to channel ID since it's the only thing
     /// songbird's context provides inside the EventHandler trait.
-    pub track_2_guild: Mutex<HashMap<Uuid, GuildChannelID>>,
+    pub track_2_guild: Mutex<HashMap<Uuid, GuildId>>,
 
-    /// The playlist for each Guild, this is just for displaying the
-    /// playlist in the message. We'll be using the songbird's queue
-    /// for actually queueing the tracks.
-    pub guild_2_tracks: Mutex<HashMap<GuildChannelID, VecDeque<TrackInfo>>>,
+    /// Just for displaying the playlist in the message since songbird's
+    /// queue is out of order.
+    pub guild_2_tracks: Mutex<HashMap<GuildId, VecDeque<TrackInfo>>>,
 
     /// The reqwest client used for downloading the track
     /// when yt-dlp being able to use playable direct url.
@@ -31,7 +29,7 @@ pub struct PlayerData {
 
     /// Send a signal when users execute /nuke, this is used to
     /// stop the play commands that are currently fetching new tracks.
-    pub nuke_signal: broadcast::Sender<GuildChannelID>,
+    pub nuke_signal: broadcast::Sender<GuildId>,
 }
 
 impl Default for PlayerData {
@@ -41,7 +39,7 @@ impl Default for PlayerData {
             track_2_guild: Mutex::new(HashMap::new()),
             guild_2_tracks: Mutex::new(HashMap::new()),
             http_client: reqwest::Client::new(),
-            nuke_signal: broadcast::channel::<GuildChannelID>(1).0,
+            nuke_signal: broadcast::channel::<GuildId>(1).0,
         }
     }
 }
