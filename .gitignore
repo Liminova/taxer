@@ -19,3 +19,5 @@ cscope.op.out
 docker-compose.yml
 bun.lockb
 .vscode
+.devcontainer/mold-*
+.devcontainer/yt-dlp*
