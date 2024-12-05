@@ -59,6 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 commands::qt::qt_cm(),
                 commands::kqt::kqt(),
                 commands::kqt::kqt_cm(),
+                commands::dcl::dcl(),
                 commands::player::play(),
                 commands::player::pause(),
                 commands::player::queue(),

@@ -1,3 +1,4 @@
+pub mod dcl;
 pub mod help;
 pub mod kqt;
 pub mod ping;
