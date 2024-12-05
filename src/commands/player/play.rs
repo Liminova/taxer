@@ -191,10 +191,7 @@ pub async fn play(
         }
     });
 
-    // ========================================================================
-    // 5. Collect incoming track info from channel, download and send to player
-    // ========================================================================
-
+    // collect incoming track info from channel, download and send to player
     let mut track_count: usize = 0;
     let mut nuke_signal = ctx.data().player_data.nuke_signal.subscribe();
     loop {
