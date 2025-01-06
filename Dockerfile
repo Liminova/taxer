@@ -13,7 +13,7 @@ RUN /tmp/bin/mold -run cargo build --release
 
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get install -y libssl3 && apt-get clean
+RUN apt-get update && apt-get install -y libssl3 ca-certificates && apt-get clean
 
 ENV YT_DLP_PATH=/usr/local/bin/yt-dlp
 ENV FFMPEG_PATH=/usr/local/bin/ffmpeg
